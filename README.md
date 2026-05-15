@@ -36,6 +36,36 @@ export DB_PASSWORD="你的密码"
 export JWT_SECRET="至少32字节的JWT密钥"
 ```
 
+## 演示模式启动
+
+推荐使用 Docker Compose 启动可演示级环境，包含 MySQL、后端和 Nginx 前端。
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+访问地址：
+
+```text
+前端入口：http://localhost:8088
+后端健康检查：http://localhost:8088/api/health
+MySQL：localhost:3307
+```
+
+重置演示数据：
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+详细说明见：
+
+```text
+docs/deploy-demo.md
+```
+
 ## 启动后端
 
 ```bash
@@ -96,6 +126,8 @@ mall-backend/api-test.http
 - `04-系统实现.md`
 - `05-测试报告.md`
 - `06-实验总结.md`
+- `07-后续开发方案.md`
+- `deploy-demo.md`
 - `presentation-outline.md`
 
 ## 本地验收建议
@@ -106,4 +138,3 @@ mall-backend/api-test.http
 4. 使用 `user / user123456` 完成浏览商品、加入购物车、新增地址、提交订单、模拟支付。
 5. 使用 `admin / admin123456` 查看统计、筛选订单并发货。
 6. 在 MySQL 中观察 `order_info`、`order_item`、`product`、`cart_item` 表的数据变化。
-

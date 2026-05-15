@@ -1,0 +1,55 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mall-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-mall_demo_root_2026}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mall_db}
+      TZ: Asia/Shanghai
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    command:
+      - --default-time-zone=+08:00
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    volumes:
+      - mall-mysql-data:/var/lib/mysql
+      - ./mall-backend/src/main/resources/sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./mall-backend/src/main/resources/sql/data.sql:/docker-entrypoint-initdb.d/02-data.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  backend:
+    build:
+      context: ./mall-backend
+    container_name: mall-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: "jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-mall_db}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
+      DB_USERNAME: "root"
+      DB_PASSWORD: "${MYSQL_ROOT_PASSWORD:-mall_demo_root_2026}"
+      JWT_SECRET: "${JWT_SECRET:-mall-demo-jwt-secret-at-least-32-bytes-2026}"
+      JWT_EXPIRATION_MINUTES: "${JWT_EXPIRATION_MINUTES:-10080}"
+      TZ: "Asia/Shanghai"
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+
+  frontend:
+    build:
+      context: ./mall-frontend
+    container_name: mall-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-8088}:80"
+
+volumes:
+  mall-mysql-data:

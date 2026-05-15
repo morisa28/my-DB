@@ -19,6 +19,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/user/register",
                         "/api/user/login",
+                        "/api/health",
                         "/api/categories",
                         "/api/products",
                         "/api/products/*",
@@ -36,4 +37,3 @@ public class WebConfig implements WebMvcConfigurer {
                 .maxAge(3600);
     }
 }
-

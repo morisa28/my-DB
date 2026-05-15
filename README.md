@@ -128,6 +128,7 @@ mall-backend/api-test.http
 - `06-实验总结.md`
 - `07-后续开发方案.md`
 - `deploy-demo.md`
+- `demo-script.md`
 - `presentation-outline.md`
 
 ## 本地验收建议

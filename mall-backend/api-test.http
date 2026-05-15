@@ -1,19 +1,18 @@
-@baseUrl = http://localhost:8080/api
+@baseUrl = http://localhost:8088/api
+@backendUrl = http://localhost:8080/api
 @userToken =
 @adminToken =
+@demoAddressId = 1
+@demoCartItemId = 1
+@createdOrderId =
 
-### 1. 用户注册
-POST {{baseUrl}}/user/register
-Content-Type: application/json
+### 0. 前端代理健康检查，演示模式推荐
+GET {{baseUrl}}/health
 
-{
-  "username": "demo",
-  "password": "demo123456",
-  "phone": "13600000000",
-  "email": "demo@example.com"
-}
+### 0.1 后端直连健康检查
+GET {{backendUrl}}/health
 
-### 2. 用户登录，明文密码 user123456
+### 1. 普通用户登录，明文密码 user123456
 POST {{baseUrl}}/user/login
 Content-Type: application/json
 
@@ -24,7 +23,7 @@ Content-Type: application/json
 
 > {% client.global.set("userToken", response.body.data.token); %}
 
-### 3. 管理员登录，明文密码 admin123456
+### 2. 管理员登录，明文密码 admin123456
 POST {{baseUrl}}/user/login
 Content-Type: application/json
 
@@ -35,13 +34,32 @@ Content-Type: application/json
 
 > {% client.global.set("adminToken", response.body.data.token); %}
 
-### 4. 查询分类
+### 3. 禁用用户登录，预期失败
+POST {{baseUrl}}/user/login
+Content-Type: application/json
+
+{
+  "username": "disabled_demo",
+  "password": "user123456"
+}
+
+### 4. 游客查询分类
 GET {{baseUrl}}/categories
 
-### 5. 查询商品列表
+### 5. 游客查询商品列表
 GET {{baseUrl}}/products?page=1&size=8&keyword=&categoryId=
 
-### 6. 加入购物车
+### 6. 游客查看商品详情
+GET {{baseUrl}}/products/3
+
+### 7. 未登录访问购物车，预期返回 401
+GET {{baseUrl}}/cart
+
+### 8. 普通用户查询购物车
+GET {{baseUrl}}/cart
+Authorization: Bearer {{userToken}}
+
+### 9. 加入购物车，演示商品：智能手环
 POST {{baseUrl}}/cart
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
@@ -51,11 +69,18 @@ Content-Type: application/json
   "quantity": 1
 }
 
-### 7. 查询购物车
+### 10. 查询购物车并记录商品 3 的购物车项 ID
 GET {{baseUrl}}/cart
 Authorization: Bearer {{userToken}}
 
-### 8. 新增地址
+> {%
+  const item = response.body.data.find(row => row.productId === 3);
+  if (item) {
+    client.global.set("demoCartItemId", item.id);
+  }
+%}
+
+### 11. 新增演示地址并记录地址 ID
 POST {{baseUrl}}/address
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
@@ -69,33 +94,64 @@ Content-Type: application/json
   "isDefault": 1
 }
 
-### 9. 创建订单，把 cartItemIds 替换为购物车查询返回的 id
+> {% client.global.set("demoAddressId", response.body.data.id); %}
+
+### 12. 创建订单，并记录订单 ID
+# 数据库观察点：
+# - order_info 新增订单主表
+# - order_item 新增商品快照
+# - product.stock 扣减，product.sales 增加
+# - cart_item 中对应购物车项被清理
 POST {{baseUrl}}/orders
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
 
 {
-  "addressId": 1,
-  "cartItemIds": [1]
+  "addressId": {{demoAddressId}},
+  "cartItemIds": [{{demoCartItemId}}]
 }
 
-### 10. 模拟支付，把 1 替换为创建订单返回的 orderId
-PUT {{baseUrl}}/orders/1/pay
+> {% client.global.set("createdOrderId", response.body.data.orderId); %}
+
+### 13. 查询用户订单列表
+GET {{baseUrl}}/orders?page=1&size=10
 Authorization: Bearer {{userToken}}
 
-### 11. 管理员查询订单
+### 14. 查询新订单详情
+GET {{baseUrl}}/orders/{{createdOrderId}}
+Authorization: Bearer {{userToken}}
+
+### 15. 模拟支付新订单
+PUT {{baseUrl}}/orders/{{createdOrderId}}/pay
+Authorization: Bearer {{userToken}}
+
+### 16. 管理员查询待发货订单
 GET {{baseUrl}}/admin/orders?page=1&size=10&status=1
 Authorization: Bearer {{adminToken}}
 
-### 12. 管理员发货，把 2 替换为待发货订单 id
-PUT {{baseUrl}}/admin/orders/2/ship
+### 17. 管理员发货新订单
+PUT {{baseUrl}}/admin/orders/{{createdOrderId}}/ship
 Authorization: Bearer {{adminToken}}
 
-### 13. 查看统计数据
+### 18. 管理员查看统计数据
 GET {{baseUrl}}/admin/statistics
 Authorization: Bearer {{adminToken}}
 
-### 14. 普通用户访问后台，预期返回 403
+### 19. 管理员查看所有订单状态样例
+GET {{baseUrl}}/admin/orders?page=1&size=10
+Authorization: Bearer {{adminToken}}
+
+### 20. 普通用户访问后台，预期返回 403
 GET {{baseUrl}}/admin/statistics
 Authorization: Bearer {{userToken}}
+
+### 21. 超库存加入购物车，预期失败
+POST {{baseUrl}}/cart
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "productId": 11,
+  "quantity": 999
+}
 

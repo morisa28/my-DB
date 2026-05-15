@@ -1,0 +1,101 @@
+@baseUrl = http://localhost:8080/api
+@userToken =
+@adminToken =
+
+### 1. 用户注册
+POST {{baseUrl}}/user/register
+Content-Type: application/json
+
+{
+  "username": "demo",
+  "password": "demo123456",
+  "phone": "13600000000",
+  "email": "demo@example.com"
+}
+
+### 2. 用户登录，明文密码 user123456
+POST {{baseUrl}}/user/login
+Content-Type: application/json
+
+{
+  "username": "user",
+  "password": "user123456"
+}
+
+> {% client.global.set("userToken", response.body.data.token); %}
+
+### 3. 管理员登录，明文密码 admin123456
+POST {{baseUrl}}/user/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123456"
+}
+
+> {% client.global.set("adminToken", response.body.data.token); %}
+
+### 4. 查询分类
+GET {{baseUrl}}/categories
+
+### 5. 查询商品列表
+GET {{baseUrl}}/products?page=1&size=8&keyword=&categoryId=
+
+### 6. 加入购物车
+POST {{baseUrl}}/cart
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "productId": 3,
+  "quantity": 1
+}
+
+### 7. 查询购物车
+GET {{baseUrl}}/cart
+Authorization: Bearer {{userToken}}
+
+### 8. 新增地址
+POST {{baseUrl}}/address
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "receiverName": "演示用户",
+  "receiverPhone": "13600000000",
+  "province": "江苏省",
+  "city": "南京市",
+  "detailAddress": "数据库实验楼 305",
+  "isDefault": 1
+}
+
+### 9. 创建订单，把 cartItemIds 替换为购物车查询返回的 id
+POST {{baseUrl}}/orders
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "addressId": 1,
+  "cartItemIds": [1]
+}
+
+### 10. 模拟支付，把 1 替换为创建订单返回的 orderId
+PUT {{baseUrl}}/orders/1/pay
+Authorization: Bearer {{userToken}}
+
+### 11. 管理员查询订单
+GET {{baseUrl}}/admin/orders?page=1&size=10&status=1
+Authorization: Bearer {{adminToken}}
+
+### 12. 管理员发货，把 2 替换为待发货订单 id
+PUT {{baseUrl}}/admin/orders/2/ship
+Authorization: Bearer {{adminToken}}
+
+### 13. 查看统计数据
+GET {{baseUrl}}/admin/statistics
+Authorization: Bearer {{adminToken}}
+
+### 14. 普通用户访问后台，预期返回 403
+GET {{baseUrl}}/admin/statistics
+Authorization: Bearer {{userToken}}
+

@@ -46,7 +46,7 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getAdminUserOrderSummary, getAdminUsers, updateUserStatus } from '../../api/user'
 
 const loading = ref(false)
@@ -69,6 +69,7 @@ async function load() {
 }
 
 async function changeStatus(row, status) {
+  await ElMessageBox.confirm(`确认${status === 1 ? '启用' : '禁用'}用户 ${row.username}？`, '用户状态')
   await updateUserStatus(row.id, status)
   ElMessage.success('状态已更新')
   await load()

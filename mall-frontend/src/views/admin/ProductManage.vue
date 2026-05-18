@@ -72,7 +72,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submit">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="submit">保存</el-button>
       </template>
     </el-dialog>
 
@@ -80,7 +80,7 @@
       <el-input-number v-model="stockForm.stock" :min="0" />
       <template #footer>
         <el-button @click="stockVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitStock">保存</el-button>
+        <el-button type="primary" :loading="stockSaving" @click="submitStock">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -108,6 +108,8 @@ const total = ref(0)
 const dialogVisible = ref(false)
 const stockVisible = ref(false)
 const uploading = ref(false)
+const saving = ref(false)
+const stockSaving = ref(false)
 const formRef = ref()
 const query = reactive({ page: 1, size: 10, keyword: '', status: null, lowStock: false })
 const form = reactive({ id: null, name: '', categoryId: null, price: 0, stock: 0, imageUrl: '', description: '', status: 1 })
@@ -141,11 +143,16 @@ function openDialog(row) {
 
 async function submit() {
   await formRef.value.validate()
-  if (form.id) await updateProduct(form.id, form)
-  else await createProduct(form)
-  ElMessage.success('保存成功')
-  dialogVisible.value = false
-  await load()
+  saving.value = true
+  try {
+    if (form.id) await updateProduct(form.id, form)
+    else await createProduct(form)
+    ElMessage.success('保存成功')
+    dialogVisible.value = false
+    await load()
+  } finally {
+    saving.value = false
+  }
 }
 
 function beforeImageUpload(file) {
@@ -180,6 +187,7 @@ async function uploadImage(options) {
 }
 
 async function changeStatus(row, status) {
+  await ElMessageBox.confirm(`确认${status === 1 ? '上架' : '下架'}该商品？`, '商品状态')
   await updateProductStatus(row.id, status)
   await load()
 }
@@ -190,9 +198,14 @@ function openStock(row) {
 }
 
 async function submitStock() {
-  await updateProductStock(stockForm.id, stockForm.stock)
-  stockVisible.value = false
-  await load()
+  stockSaving.value = true
+  try {
+    await updateProductStock(stockForm.id, stockForm.stock)
+    stockVisible.value = false
+    await load()
+  } finally {
+    stockSaving.value = false
+  }
 }
 
 async function remove(id) {

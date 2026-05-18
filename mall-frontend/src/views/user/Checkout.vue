@@ -23,6 +23,15 @@
       </el-table>
     </section>
 
+    <section class="panel block">
+      <h2>线下付款说明</h2>
+      <div class="payment-lines">
+        <div>提交订单后进入待支付状态。</div>
+        <div>付款后在订单详情填写付款渠道、转账尾号或流水号。</div>
+        <div>管理员确认收款后安排发货。</div>
+      </div>
+    </section>
+
     <div class="submit panel">
       <strong>应付金额：<span class="price">￥{{ totalAmount }}</span></strong>
       <el-button type="primary" :disabled="!addressId || !selectedItems.length" :loading="submitting" @click="submit">提交订单</el-button>
@@ -98,5 +107,18 @@ h2 {
   gap: 20px;
   align-items: center;
 }
-</style>
 
+.payment-lines {
+  display: grid;
+  gap: 8px;
+  color: #4b5563;
+  line-height: 1.7;
+}
+
+@media (max-width: 680px) {
+  .submit {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+</style>

@@ -76,5 +76,20 @@ a {
   .toolbar {
     align-items: stretch;
   }
-}
 
+  .toolbar > * {
+    max-width: 100%;
+  }
+
+  .el-dialog {
+    width: calc(100vw - 24px) !important;
+  }
+
+  .el-drawer {
+    width: min(100vw, 420px) !important;
+  }
+
+  .el-table .cell {
+    word-break: break-word;
+  }
+}

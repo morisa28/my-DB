@@ -30,10 +30,19 @@ request.interceptors.response.use(
     return Promise.reject(new Error(message))
   },
   (error) => {
-    ElMessage.error(error.response?.data?.message || error.message || '网络异常')
+    const status = error.response?.status
+    const body = error.response?.data
+    const message = status === 500
+      ? '系统暂时不可用，请稍后重试'
+      : body?.message || error.message || '网络异常'
+    ElMessage.error(status === 403 ? '无权限执行该操作' : message)
+    if (status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    }
     return Promise.reject(error)
   }
 )
 
 export default request
-

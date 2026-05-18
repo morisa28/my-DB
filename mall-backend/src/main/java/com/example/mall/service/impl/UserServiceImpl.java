@@ -53,7 +53,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(401, "用户名或密码错误");
         }
         if (!Integer.valueOf(1).equals(user.getStatus())) {
-            throw new BusinessException(403, "用户已被禁用");
+            throw new BusinessException(401, "用户名或密码错误");
         }
         String token = jwtUtils.generateToken(user.getId(), user.getUsername(), user.getRole());
         return new LoginVO(token, toUserVO(user));
@@ -130,4 +130,3 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return CopyUtils.copy(user, UserVO.class);
     }
 }
-

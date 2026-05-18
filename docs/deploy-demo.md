@@ -168,6 +168,7 @@ docker compose down -v
 MYSQL_PORT=3307
 BACKEND_PORT=8080
 FRONTEND_PORT=8088
+CORS_ALLOWED_ORIGINS=*
 UPLOAD_DIR=/app/uploads
 UPLOAD_BASE_URL=/uploads
 ```
@@ -228,6 +229,7 @@ docker compose logs backend
 - `DB_URL` 是否指向 `mysql:3306`。
 - `DB_PASSWORD` 是否和 MySQL root 密码一致。
 - `JWT_SECRET` 是否至少 32 字节。
+- 如果设置 `SPRING_PROFILES_ACTIVE=prod`，必须使用非默认 `JWT_SECRET`。
 
 ## 9. 手动开发模式
 

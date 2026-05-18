@@ -15,6 +15,7 @@ import java.nio.file.Path;
 public class WebConfig implements WebMvcConfigurer {
     private final JwtAuthInterceptor jwtAuthInterceptor;
     private final UploadProperties uploadProperties;
+    private final CorsProperties corsProperties;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -47,8 +48,12 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        String[] allowedOrigins = corsProperties.getAllowedOrigins().stream()
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .toArray(String[]::new);
         registry.addMapping("/api/**")
-                .allowedOriginPatterns("*")
+                .allowedOriginPatterns(allowedOrigins.length == 0 ? new String[]{"*"} : allowedOrigins)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)

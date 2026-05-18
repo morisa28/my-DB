@@ -35,3 +35,5 @@ mall:
     base-url: ${UPLOAD_BASE_URL:/uploads}
     max-size-bytes: ${UPLOAD_MAX_SIZE_BYTES:2097152}
     allowed-extensions: ${UPLOAD_ALLOWED_EXTENSIONS:jpg,jpeg,png,webp}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:*}

@@ -34,6 +34,7 @@ export DB_URL="jdbc:mysql://localhost:3306/mall_db?useUnicode=true&characterEnco
 export DB_USERNAME="root"
 export DB_PASSWORD="你的密码"
 export JWT_SECRET="至少32字节的JWT密钥"
+export CORS_ALLOWED_ORIGINS="http://localhost:5173"
 export UPLOAD_DIR="./uploads"
 export UPLOAD_BASE_URL="/uploads"
 ```
@@ -111,6 +112,8 @@ mall-backend/api-test.http
 ## 重点展示功能
 
 - 用户注册登录和 JWT 鉴权。
+- 禁用用户 Token 会被后端拒绝，生产环境禁止使用默认 JWT 密钥。
+- CORS 允许来源可通过 `CORS_ALLOWED_ORIGINS` 配置。
 - 商品分页、搜索、分类筛选。
 - 管理员上传商品主图，图片保存到持久化上传目录并通过 `/uploads/**` 访问。
 - 购物车同用户同商品唯一记录。

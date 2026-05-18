@@ -165,13 +165,20 @@ docker compose down -v
 修改 `.env`：
 
 ```text
+MYSQL_ROOT_PASSWORD=mall_demo_root_2026
+MYSQL_DATABASE=mall_db
 MYSQL_PORT=3307
+DB_USERNAME=root
+DB_PASSWORD=mall_demo_root_2026
 BACKEND_PORT=8080
 FRONTEND_PORT=8088
+SPRING_PROFILES_ACTIVE=dev
 CORS_ALLOWED_ORIGINS=*
 UPLOAD_DIR=/app/uploads
 UPLOAD_BASE_URL=/uploads
 ```
+
+`DB_PASSWORD` 必须与后端实际连接 MySQL 的密码一致。默认同 `MYSQL_ROOT_PASSWORD`；如果修改 MySQL root 密码，也要同步修改 `DB_PASSWORD`。
 
 修改后重新启动：
 
@@ -230,6 +237,7 @@ docker compose logs backend
 - `DB_PASSWORD` 是否和 MySQL root 密码一致。
 - `JWT_SECRET` 是否至少 32 字节。
 - 如果设置 `SPRING_PROFILES_ACTIVE=prod`，必须使用非默认 `JWT_SECRET`。
+- `SPRING_PROFILES_ACTIVE=prod` 时，`DB_URL`、`DB_USERNAME`、`DB_PASSWORD`、`JWT_SECRET`、`CORS_ALLOWED_ORIGINS` 都必须显式配置。
 
 ## 9. 手动开发模式
 

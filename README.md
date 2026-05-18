@@ -33,6 +33,7 @@ mysql -u root -p mall_db < mall-backend/src/main/resources/sql/data.sql
 export DB_URL="jdbc:mysql://localhost:3306/mall_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
 export DB_USERNAME="root"
 export DB_PASSWORD="你的密码"
+export SPRING_PROFILES_ACTIVE="dev"
 export JWT_SECRET="至少32字节的JWT密钥"
 export CORS_ALLOWED_ORIGINS="http://localhost:5173"
 export UPLOAD_DIR="./uploads"
@@ -67,6 +68,7 @@ docker compose up -d --build
 
 ```text
 docs/deploy-demo.md
+docs/database-migration.md
 ```
 
 ## 启动后端
@@ -137,6 +139,7 @@ mall-backend/api-test.http
 - `08-接续开发说明.md`
 - `deploy-demo.md`
 - `demo-script.md`
+- `database-migration.md`
 - `presentation-outline.md`
 
 ## 本地验收建议

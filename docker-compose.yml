@@ -32,9 +32,10 @@ services:
       mysql:
         condition: service_healthy
     environment:
+      SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-dev}"
       DB_URL: "jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-mall_db}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
-      DB_USERNAME: "root"
-      DB_PASSWORD: "${MYSQL_ROOT_PASSWORD:-mall_demo_root_2026}"
+      DB_USERNAME: "${DB_USERNAME:-root}"
+      DB_PASSWORD: "${DB_PASSWORD:-mall_demo_root_2026}"
       JWT_SECRET: "${JWT_SECRET:-mall-demo-jwt-secret-at-least-32-bytes-2026}"
       JWT_EXPIRATION_MINUTES: "${JWT_EXPIRATION_MINUTES:-10080}"
       UPLOAD_DIR: "${UPLOAD_DIR:-/app/uploads}"

@@ -28,12 +28,16 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
     @Override
     public PageResult<ProductVO> pageProducts(ProductQueryDTO query, boolean admin) {
+        boolean lowStockMode = admin && Boolean.TRUE.equals(query.getLowStock());
         LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<Product>()
                 .eq(query.getCategoryId() != null, Product::getCategoryId, query.getCategoryId())
                 .like(StringUtils.hasText(query.getKeyword()), Product::getName, query.getKeyword())
                 .eq(admin && query.getStatus() != null, Product::getStatus, query.getStatus())
                 .eq(!admin, Product::getStatus, 1)
-                .orderByDesc(Product::getCreateTime);
+                .lt(lowStockMode, Product::getStock, 10)
+                .orderByAsc(lowStockMode, Product::getStock)
+                .orderByAsc(lowStockMode, Product::getId)
+                .orderByDesc(!lowStockMode, Product::getCreateTime);
         Page<Product> result = page(new Page<>(query.getPage(), query.getSize()), wrapper);
         List<ProductVO> records = result.getRecords().stream().map(this::toProductVO).toList();
         return new PageResult<>(result.getTotal(), result.getCurrent(), result.getSize(), records);
@@ -128,4 +132,3 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         return vo;
     }
 }
-

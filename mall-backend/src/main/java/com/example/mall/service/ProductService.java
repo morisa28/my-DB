@@ -22,4 +22,3 @@ public interface ProductService extends IService<Product> {
 
     void updateProductStock(Long id, Integer stock);
 }
-

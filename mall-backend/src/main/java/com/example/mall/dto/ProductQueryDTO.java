@@ -9,5 +9,5 @@ public class ProductQueryDTO {
     private Long categoryId;
     private String keyword;
     private Integer status;
+    private Boolean lowStock;
 }
-

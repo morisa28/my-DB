@@ -8,6 +8,7 @@
           <el-option label="上架" :value="1" />
           <el-option label="下架" :value="0" />
         </el-select>
+        <el-checkbox v-model="query.lowStock" @change="load">低库存</el-checkbox>
         <el-button type="primary" @click="openDialog()">新增商品</el-button>
       </div>
     </div>
@@ -108,7 +109,7 @@ const dialogVisible = ref(false)
 const stockVisible = ref(false)
 const uploading = ref(false)
 const formRef = ref()
-const query = reactive({ page: 1, size: 10, keyword: '', status: null })
+const query = reactive({ page: 1, size: 10, keyword: '', status: null, lowStock: false })
 const form = reactive({ id: null, name: '', categoryId: null, price: 0, stock: 0, imageUrl: '', description: '', status: 1 })
 const stockForm = reactive({ id: null, stock: 0 })
 const rules = {

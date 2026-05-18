@@ -8,6 +8,7 @@ import com.example.mall.dto.RegisterDTO;
 import com.example.mall.dto.UserUpdateDTO;
 import com.example.mall.entity.User;
 import com.example.mall.vo.LoginVO;
+import com.example.mall.vo.UserOrderSummaryVO;
 import com.example.mall.vo.UserVO;
 
 public interface UserService extends IService<User> {
@@ -24,5 +25,6 @@ public interface UserService extends IService<User> {
     PageResult<UserVO> pageUsers(Long page, Long size, String keyword);
 
     void updateUserStatus(Long id, Integer status);
-}
 
+    UserOrderSummaryVO getUserOrderSummary(Long id);
+}

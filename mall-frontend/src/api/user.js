@@ -8,4 +8,4 @@ export const updatePassword = (data) => request.put('/user/password', data)
 
 export const getAdminUsers = (params) => request.get('/admin/users', { params })
 export const updateUserStatus = (id, status) => request.put(`/admin/users/${id}/status`, { status })
-
+export const getAdminUserOrderSummary = (id) => request.get(`/admin/users/${id}/order-summary`)

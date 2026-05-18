@@ -10,12 +10,14 @@ import com.example.mall.dto.RegisterDTO;
 import com.example.mall.dto.UserUpdateDTO;
 import com.example.mall.entity.User;
 import com.example.mall.exception.BusinessException;
+import com.example.mall.mapper.OrderInfoMapper;
 import com.example.mall.mapper.UserMapper;
 import com.example.mall.security.UserContext;
 import com.example.mall.service.UserService;
 import com.example.mall.utils.CopyUtils;
 import com.example.mall.utils.JwtUtils;
 import com.example.mall.vo.LoginVO;
+import com.example.mall.vo.UserOrderSummaryVO;
 import com.example.mall.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +30,7 @@ import org.springframework.util.StringUtils;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
+    private final OrderInfoMapper orderInfoMapper;
 
     @Override
     @Transactional
@@ -124,6 +127,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         user.setStatus(status);
         updateById(user);
+    }
+
+    @Override
+    public UserOrderSummaryVO getUserOrderSummary(Long id) {
+        if (getById(id) == null) {
+            throw new BusinessException("用户不存在");
+        }
+        return orderInfoMapper.selectUserOrderSummary(id);
     }
 
     private UserVO toUserVO(User user) {

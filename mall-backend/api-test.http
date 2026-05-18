@@ -236,11 +236,19 @@ Content-Type: image/png
 GET {{baseUrl}}/admin/orders?page=1&size=10
 Authorization: Bearer {{adminToken}}
 
-### 29. 普通用户访问后台，预期返回 403
+### 29. 管理员筛选低库存商品
+GET {{baseUrl}}/admin/products?page=1&size=10&lowStock=true
+Authorization: Bearer {{adminToken}}
+
+### 30. 管理员查看用户订单概要
+GET {{baseUrl}}/admin/users/2/order-summary
+Authorization: Bearer {{adminToken}}
+
+### 31. 普通用户访问后台，预期返回 403
 GET {{baseUrl}}/admin/statistics
 Authorization: Bearer {{userToken}}
 
-### 30. 超库存加入购物车，预期失败
+### 32. 超库存加入购物车，预期失败
 POST {{baseUrl}}/cart
 Authorization: Bearer {{userToken}}
 Content-Type: application/json

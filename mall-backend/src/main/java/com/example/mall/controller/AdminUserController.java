@@ -5,6 +5,7 @@ import com.example.mall.common.Result;
 import com.example.mall.dto.StatusDTO;
 import com.example.mall.security.RequireAdmin;
 import com.example.mall.service.UserService;
+import com.example.mall.vo.UserOrderSummaryVO;
 import com.example.mall.vo.UserVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,5 +36,9 @@ public class AdminUserController {
         userService.updateUserStatus(id, dto.getStatus());
         return Result.ok();
     }
-}
 
+    @GetMapping("/{id}/order-summary")
+    public Result<UserOrderSummaryVO> orderSummary(@PathVariable Long id) {
+        return Result.ok(userService.getUserOrderSummary(id));
+    }
+}

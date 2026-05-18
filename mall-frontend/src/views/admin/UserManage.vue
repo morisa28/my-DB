@@ -16,21 +16,45 @@
         </template>
       </el-table-column>
       <el-table-column prop="createTime" label="注册时间" width="180" />
+      <el-table-column label="操作" width="120">
+        <template #default="{ row }">
+          <el-button size="small" @click="openSummary(row)">订单概要</el-button>
+        </template>
+      </el-table-column>
     </el-table>
     <div class="pager">
       <el-pagination layout="prev, pager, next, total" :total="total" :page-size="query.size" v-model:current-page="query.page" @current-change="load" />
     </div>
+
+    <el-drawer v-model="summaryVisible" title="用户订单概要" size="420px">
+      <template v-if="selectedUser && summary">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="用户">{{ selectedUser.username }}</el-descriptions-item>
+          <el-descriptions-item label="订单总数">{{ summary.totalOrders }}</el-descriptions-item>
+          <el-descriptions-item label="已收款金额">￥{{ summary.paidAmount }}</el-descriptions-item>
+          <el-descriptions-item label="待支付">{{ summary.waitingPaymentOrders }}</el-descriptions-item>
+          <el-descriptions-item label="待发货">{{ summary.waitingShipmentOrders }}</el-descriptions-item>
+          <el-descriptions-item label="已发货">{{ summary.shippedOrders }}</el-descriptions-item>
+          <el-descriptions-item label="已完成">{{ summary.finishedOrders }}</el-descriptions-item>
+          <el-descriptions-item label="已取消">{{ summary.canceledOrders }}</el-descriptions-item>
+          <el-descriptions-item label="最近下单">{{ summary.lastOrderTime || '-' }}</el-descriptions-item>
+        </el-descriptions>
+      </template>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getAdminUsers, updateUserStatus } from '../../api/user'
+import { getAdminUserOrderSummary, getAdminUsers, updateUserStatus } from '../../api/user'
 
 const loading = ref(false)
 const users = ref([])
 const total = ref(0)
+const selectedUser = ref(null)
+const summary = ref(null)
+const summaryVisible = ref(false)
 const query = reactive({ page: 1, size: 10, keyword: '' })
 
 async function load() {
@@ -50,6 +74,12 @@ async function changeStatus(row, status) {
   await load()
 }
 
+async function openSummary(row) {
+  selectedUser.value = row
+  summary.value = await getAdminUserOrderSummary(row.id)
+  summaryVisible.value = true
+}
+
 onMounted(load)
 </script>
 
@@ -64,4 +94,3 @@ onMounted(load)
   justify-content: center;
 }
 </style>
-

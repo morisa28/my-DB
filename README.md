@@ -69,6 +69,8 @@ docker compose up -d --build
 ```text
 docs/deploy-demo.md
 docs/database-migration.md
+docs/deploy-server-precheck.md
+docs/ops-runbook.md
 ```
 
 ## 启动后端
@@ -146,9 +148,19 @@ node scripts/practical-flow-check.mjs
 - `06-实验总结.md`
 - `07-后续开发方案.md`
 - `08-接续开发说明.md`
+- `09-Codex后续开发Prompt.md`
+- `10-阶段四-商品图片上传.md`
+- `11-阶段五-账户安全配置加固.md`
+- `12-阶段六-配置与数据库演进.md`
+- `13-阶段七-管理后台实用化.md`
+- `14-阶段八-前端实用体验.md`
+- `15-阶段九-测试和上线前验证.md`
+- `16-阶段十-服务器部署前交付包.md`
 - `deploy-demo.md`
 - `demo-script.md`
 - `database-migration.md`
+- `deploy-server-precheck.md`
+- `ops-runbook.md`
 - `presentation-outline.md`
 
 ## 本地验收建议

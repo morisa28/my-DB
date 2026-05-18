@@ -8,7 +8,7 @@
 
 ## 当前进度更新
 
-截至 2026-05-19，第一阶段至第九阶段已完成：
+截至 2026-05-19，第一阶段至第十阶段已完成：
 
 - 文档收口和远程推送已完成。
 - Docker Compose 环境已通过真实启动验证，前端、后端、MySQL 和 Nginx `/api` 代理可用。
@@ -19,8 +19,9 @@
 - 管理后台已补齐低库存筛选和用户订单概要能力，管理员可完成商品、订单、用户和统计的基础运营。
 - 前端已补齐 401/403/500 全局错误处理、结算页付款说明、后台关键操作确认和基础移动端适配。
 - 已新增 `scripts/practical-flow-check.mjs` 并完成 clean Docker 启动、构建、健康检查和核心业务验收。
+- 已新增服务器部署前检查清单 `docs/deploy-server-precheck.md` 和运维手册 `docs/ops-runbook.md`。
 
-后续继续开发时，请从 **第十阶段：服务器部署前交付包** 开始推进；若发现已完成阶段相关回归，再按缺陷修复处理。
+服务器部署前应用侧开发目标已完成。后续继续开发时，应从用户实际服务器环境、正式配置、真实支付、对象存储、通知服务、审计日志和更完整自动化测试等增量需求开始；若发现已完成阶段相关回归，再按缺陷修复处理。
 
 ---
 
@@ -62,13 +63,6 @@ origin/codex/mall-platform
 0a69e6e test: add demo flow api checks
 46dcbdf feat: add docker compose demo environment
 60a1964 feat: implement mall platform
-```
-
-当前可能存在尚未提交的文档改动：
-
-```text
-README.md
-docs/08-接续开发说明.md
 ```
 
 开始开发前请先执行只读检查：
@@ -119,7 +113,7 @@ git remote -v
 - `docs/demo-script.md`
 - `docs/deploy-demo.md`
 
-但当前还不是实用级项目，仍需补齐订单实用流程、文件上传、安全配置、部署前检查和测试。
+当前已达到服务器部署前的小规模实用项目交付状态。部署到云服务器、配置 HTTPS、正式域名、安全组和生产 `.env` 仍由用户完成。
 
 ---
 
@@ -563,6 +557,8 @@ docs/ops-runbook.md
 - 订单可小规模实用处理
 - 配置不含敏感信息
 - 用户可接手部署到云服务器
+
+当前状态：已完成。后续如修改部署结构、端口、环境变量、上传策略或数据库策略，必须同步更新 `docs/deploy-server-precheck.md` 和 `docs/ops-runbook.md`。
 
 ---
 

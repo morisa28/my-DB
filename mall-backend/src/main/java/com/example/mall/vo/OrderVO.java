@@ -17,10 +17,14 @@ public class OrderVO {
     private String receiverName;
     private String receiverPhone;
     private String receiverAddress;
+    private String paymentNote;
+    private String adminRemark;
+    private String shippingNo;
     private LocalDateTime payTime;
     private LocalDateTime shipTime;
     private LocalDateTime finishTime;
+    private LocalDateTime cancelTime;
+    private LocalDateTime confirmTime;
     private LocalDateTime createTime;
     private List<OrderItemVO> items;
 }
-

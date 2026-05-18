@@ -5,6 +5,8 @@
 @demoAddressId = 1
 @demoCartItemId = 1
 @createdOrderId =
+@cancelOrderCartItemId =
+@cancelOrderId =
 
 ### 0. 前端代理健康检查，演示模式推荐
 GET {{baseUrl}}/health
@@ -121,31 +123,96 @@ Authorization: Bearer {{userToken}}
 GET {{baseUrl}}/orders/{{createdOrderId}}
 Authorization: Bearer {{userToken}}
 
-### 15. 模拟支付新订单
-PUT {{baseUrl}}/orders/{{createdOrderId}}/pay
+### 15. 用户提交付款备注，新订单仍保持待支付，等待管理员确认收款
+PUT {{baseUrl}}/orders/{{createdOrderId}}/payment-note
 Authorization: Bearer {{userToken}}
+Content-Type: application/json
 
-### 16. 管理员查询待发货订单
+{
+  "paymentNote": "微信转账尾号 2026，备注订单号"
+}
+
+### 16. 管理员查询待支付订单
+GET {{baseUrl}}/admin/orders?page=1&size=10&status=0
+Authorization: Bearer {{adminToken}}
+
+### 17. 管理员确认收款
+POST {{baseUrl}}/admin/orders/{{createdOrderId}}/confirm-payment
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "adminRemark": "已核对到账"
+}
+
+### 18. 管理员查询待发货订单
 GET {{baseUrl}}/admin/orders?page=1&size=10&status=1
 Authorization: Bearer {{adminToken}}
 
-### 17. 管理员发货新订单
+### 19. 管理员发货新订单
 PUT {{baseUrl}}/admin/orders/{{createdOrderId}}/ship
 Authorization: Bearer {{adminToken}}
+Content-Type: application/json
 
-### 18. 管理员查看统计数据
+{
+  "shippingNo": "SF202605190001",
+  "adminRemark": "已打包发出"
+}
+
+### 20. 用户确认收货
+PUT {{baseUrl}}/orders/{{createdOrderId}}/confirm-receipt
+Authorization: Bearer {{userToken}}
+
+### 21. 用户再次加入购物车，用于取消待支付订单
+POST {{baseUrl}}/cart
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "productId": 4,
+  "quantity": 1
+}
+
+### 22. 查询购物车并记录商品 4 的购物车项 ID
+GET {{baseUrl}}/cart
+Authorization: Bearer {{userToken}}
+
+> {%
+  const item = response.body.data.find(row => row.productId === 4);
+  if (item) {
+    client.global.set("cancelOrderCartItemId", item.id);
+  }
+%}
+
+### 23. 创建待取消订单
+POST {{baseUrl}}/orders
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "addressId": {{demoAddressId}},
+  "cartItemIds": [{{cancelOrderCartItemId}}]
+}
+
+> {% client.global.set("cancelOrderId", response.body.data.orderId); %}
+
+### 24. 用户取消待支付订单，预期释放库存并回退销量
+PUT {{baseUrl}}/orders/{{cancelOrderId}}/cancel
+Authorization: Bearer {{userToken}}
+
+### 25. 管理员查看统计数据
 GET {{baseUrl}}/admin/statistics
 Authorization: Bearer {{adminToken}}
 
-### 19. 管理员查看所有订单状态样例
+### 26. 管理员查看所有订单状态样例
 GET {{baseUrl}}/admin/orders?page=1&size=10
 Authorization: Bearer {{adminToken}}
 
-### 20. 普通用户访问后台，预期返回 403
+### 27. 普通用户访问后台，预期返回 403
 GET {{baseUrl}}/admin/statistics
 Authorization: Bearer {{userToken}}
 
-### 21. 超库存加入购物车，预期失败
+### 28. 超库存加入购物车，预期失败
 POST {{baseUrl}}/cart
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
@@ -154,4 +221,3 @@ Content-Type: application/json
   "productId": 11,
   "quantity": 999
 }
-

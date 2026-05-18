@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 USE mall_db;
 
 INSERT INTO `user` (id, username, password, phone, email, role, status) VALUES
@@ -36,12 +38,12 @@ INSERT INTO cart_item (id, user_id, product_id, quantity) VALUES
 (2, 2, 7, 2),
 (3, 3, 10, 1);
 
-INSERT INTO order_info (id, order_no, user_id, total_amount, status, receiver_name, receiver_phone, receiver_address, pay_time, ship_time, finish_time) VALUES
-(1, 'M202605150900000001', 2, 358.90, 2, '张同学', '13900000000', '江苏省南京市江宁区大学城 1 号宿舍楼 502', '2026-05-15 09:05:00', '2026-05-15 10:10:00', NULL),
-(2, 'M202605150910000002', 3, 172.90, 1, 'Alice', '13700000000', '上海市上海市浦东新区课程实验楼 306', '2026-05-15 09:15:00', NULL, NULL),
-(3, 'M202605150920000003', 2, 338.80, 0, '张同学', '13900000000', '江苏省南京市教学楼 B 区 101', NULL, NULL, NULL),
-(4, 'M202605150930000004', 2, 174.00, 3, '张同学', '13900000000', '江苏省南京市江宁区大学城 1 号宿舍楼 502', '2026-05-15 09:35:00', '2026-05-15 10:20:00', '2026-05-15 12:00:00'),
-(5, 'M202605150940000005', 3, 35.00, 4, 'Alice', '13700000000', '上海市上海市浦东新区课程实验楼 306', NULL, NULL, NULL);
+INSERT INTO order_info (id, order_no, user_id, total_amount, status, receiver_name, receiver_phone, receiver_address, payment_note, admin_remark, shipping_no, pay_time, ship_time, finish_time, cancel_time, confirm_time) VALUES
+(1, 'M202605150900000001', 2, 358.90, 2, '张同学', '13900000000', '江苏省南京市江宁区大学城 1 号宿舍楼 502', '微信转账尾号 1024', '已确认收款', 'SF202605150001', '2026-05-15 09:05:00', '2026-05-15 10:10:00', NULL, NULL, NULL),
+(2, 'M202605150910000002', 3, 172.90, 1, 'Alice', '13700000000', '上海市上海市浦东新区课程实验楼 306', '支付宝转账尾号 2048', '已确认收款，待打包', NULL, '2026-05-15 09:15:00', NULL, NULL, NULL, NULL),
+(3, 'M202605150920000003', 2, 338.80, 0, '张同学', '13900000000', '江苏省南京市教学楼 B 区 101', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(4, 'M202605150930000004', 2, 174.00, 3, '张同学', '13900000000', '江苏省南京市江宁区大学城 1 号宿舍楼 502', '线下现金支付', '已完成', 'ZTO202605150004', '2026-05-15 09:35:00', '2026-05-15 10:20:00', '2026-05-15 12:00:00', NULL, '2026-05-15 12:00:00'),
+(5, 'M202605150940000005', 3, 35.00, 4, 'Alice', '13700000000', '上海市上海市浦东新区课程实验楼 306', NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-15 09:50:00', NULL);
 
 INSERT INTO order_item (order_id, product_id, product_name, product_price, quantity, total_price, product_image) VALUES
 (1, 2, '便携机械键盘', 239.00, 1, 239.00, 'https://picsum.photos/seed/mall-keyboard/640/480'),

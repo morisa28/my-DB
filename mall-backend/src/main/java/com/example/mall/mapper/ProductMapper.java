@@ -20,6 +20,13 @@ public interface ProductMapper extends BaseMapper<Product> {
             """)
     int safeDecreaseStock(Long productId, Integer quantity);
 
+    @Update("""
+            UPDATE product
+            SET stock = stock + #{quantity}, sales = GREATEST(sales - #{quantity}, 0)
+            WHERE id = #{productId}
+            """)
+    int restoreStockFromCanceledOrder(Long productId, Integer quantity);
+
     @Select("""
             SELECT id AS productId, name AS productName, stock
             FROM product
@@ -43,4 +50,3 @@ public interface ProductMapper extends BaseMapper<Product> {
             """)
     List<ProductRankVO> selectTopProducts();
 }
-

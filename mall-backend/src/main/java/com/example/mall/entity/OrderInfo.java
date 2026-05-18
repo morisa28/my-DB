@@ -21,9 +21,14 @@ public class OrderInfo {
     private String receiverName;
     private String receiverPhone;
     private String receiverAddress;
+    private String paymentNote;
+    private String adminRemark;
+    private String shippingNo;
     private LocalDateTime payTime;
     private LocalDateTime shipTime;
     private LocalDateTime finishTime;
+    private LocalDateTime cancelTime;
+    private LocalDateTime confirmTime;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
@@ -31,4 +36,3 @@ public class OrderInfo {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 }
-

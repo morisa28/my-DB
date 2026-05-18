@@ -2,15 +2,20 @@ package com.example.mall.controller;
 
 import com.example.mall.common.PageResult;
 import com.example.mall.common.Result;
+import com.example.mall.dto.AdminPaymentConfirmDTO;
 import com.example.mall.dto.OrderQueryDTO;
+import com.example.mall.dto.ShipOrderDTO;
 import com.example.mall.security.RequireAdmin;
 import com.example.mall.service.OrderService;
 import com.example.mall.vo.OrderDetailVO;
 import com.example.mall.vo.OrderVO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,10 +36,15 @@ public class AdminOrderController {
         return Result.ok(orderService.getAdminOrderDetail(id));
     }
 
+    @PostMapping("/{id}/confirm-payment")
+    public Result<Void> confirmPayment(@PathVariable Long id, @Valid @RequestBody(required = false) AdminPaymentConfirmDTO dto) {
+        orderService.confirmPayment(id, dto);
+        return Result.ok();
+    }
+
     @PutMapping("/{id}/ship")
-    public Result<Void> ship(@PathVariable Long id) {
-        orderService.shipOrder(id);
+    public Result<Void> ship(@PathVariable Long id, @Valid @RequestBody(required = false) ShipOrderDTO dto) {
+        orderService.shipOrder(id, dto);
         return Result.ok();
     }
 }
-

@@ -12,12 +12,13 @@
       <el-table-column label="金额" width="120"><template #default="{ row }"><span class="price">￥{{ row.totalAmount }}</span></template></el-table-column>
       <el-table-column label="状态" width="130"><template #default="{ row }"><el-tag :type="statusType(row.status)">{{ statusText(row.status) }}</el-tag></template></el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="220">
+      <el-table-column label="操作" width="340">
         <template #default="{ row }">
           <div class="table-actions">
             <el-button size="small" @click="$router.push(`/orders/${row.id}`)">详情</el-button>
-            <el-button v-if="row.status === 0" size="small" type="primary" @click="pay(row.id)">支付</el-button>
+            <el-button v-if="row.status === 0" size="small" type="primary" @click="submitPayment(row)">付款备注</el-button>
             <el-button v-if="row.status === 0" size="small" type="danger" @click="cancel(row.id)">取消</el-button>
+            <el-button v-if="row.status === 2" size="small" type="success" @click="receive(row.id)">确认收货</el-button>
           </div>
         </template>
       </el-table-column>
@@ -31,8 +32,8 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { cancelOrder, getOrders, payOrder } from '../../api/order'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { cancelOrder, confirmReceipt, getOrders, submitPaymentNote } from '../../api/order'
 
 const loading = ref(false)
 const orders = ref([])
@@ -65,15 +66,30 @@ async function load() {
   }
 }
 
-async function pay(id) {
-  await payOrder(id)
-  ElMessage.success('支付成功')
+async function submitPayment(row) {
+  const { value } = await ElMessageBox.prompt('填写付款渠道、转账尾号或流水号', '付款备注', {
+    inputType: 'textarea',
+    inputValue: row.paymentNote || '',
+    confirmButtonText: '提交',
+    cancelButtonText: '取消',
+    inputValidator: (value) => !value || value.length <= 255 || '付款备注不能超过255个字符'
+  })
+  await submitPaymentNote(row.id, { paymentNote: value || '' })
+  ElMessage.success('付款备注已提交，等待管理员确认收款')
   await load()
 }
 
 async function cancel(id) {
+  await ElMessageBox.confirm('取消待支付订单后将恢复商品库存，是否继续？', '取消订单')
   await cancelOrder(id)
   ElMessage.success('订单已取消')
+  await load()
+}
+
+async function receive(id) {
+  await ElMessageBox.confirm('确认已收到商品？确认后订单将完成。', '确认收货')
+  await confirmReceipt(id)
+  ElMessage.success('订单已完成')
   await load()
 }
 
@@ -91,4 +107,3 @@ onMounted(load)
   justify-content: center;
 }
 </style>
-

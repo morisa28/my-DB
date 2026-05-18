@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 DROP DATABASE IF EXISTS mall_db;
 CREATE DATABASE mall_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 USE mall_db;
@@ -91,9 +93,14 @@ CREATE TABLE order_info (
     receiver_name VARCHAR(50) NOT NULL,
     receiver_phone VARCHAR(20) NOT NULL,
     receiver_address VARCHAR(255) NOT NULL,
+    payment_note VARCHAR(255) COMMENT '用户付款备注，例如付款渠道、转账尾号或流水号',
+    admin_remark VARCHAR(255) COMMENT '管理员收款、发货或售后备注',
+    shipping_no VARCHAR(64) COMMENT '物流单号或配送编号',
     pay_time DATETIME,
     ship_time DATETIME,
     finish_time DATETIME,
+    cancel_time DATETIME,
+    confirm_time DATETIME,
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_order_no (order_no),
@@ -123,4 +130,3 @@ CREATE TABLE order_item (
     CONSTRAINT ck_order_item_quantity CHECK (quantity > 0),
     CONSTRAINT ck_order_item_total CHECK (total_price >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单明细表';
-

@@ -11,12 +11,13 @@
       <el-table-column prop="orderNo" label="订单号" min-width="220" />
       <el-table-column prop="username" label="用户" width="110" />
       <el-table-column label="金额" width="120"><template #default="{ row }"><span class="price">￥{{ row.totalAmount }}</span></template></el-table-column>
-      <el-table-column label="状态" width="130"><template #default="{ row }"><el-tag>{{ statusText(row.status) }}</el-tag></template></el-table-column>
+      <el-table-column label="状态" width="130"><template #default="{ row }"><el-tag :type="statusType(row.status)">{{ statusText(row.status) }}</el-tag></template></el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="180">
+      <el-table-column label="操作" width="280">
         <template #default="{ row }">
           <div class="table-actions">
             <el-button size="small" @click="openDetail(row.id)">详情</el-button>
+            <el-button v-if="row.status === 0" size="small" type="success" @click="confirmMoney(row.id)">确认收款</el-button>
             <el-button v-if="row.status === 1" size="small" type="primary" @click="ship(row.id)">发货</el-button>
           </div>
         </template>
@@ -31,8 +32,16 @@
       <template v-if="detail">
         <el-descriptions :column="1" border>
           <el-descriptions-item label="订单号">{{ detail.orderNo }}</el-descriptions-item>
+          <el-descriptions-item label="状态">{{ statusText(detail.status) }}</el-descriptions-item>
+          <el-descriptions-item label="金额">￥{{ detail.totalAmount }}</el-descriptions-item>
+          <el-descriptions-item label="付款备注">{{ detail.paymentNote || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="管理员备注">{{ detail.adminRemark || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="物流单号">{{ detail.shippingNo || '-' }}</el-descriptions-item>
           <el-descriptions-item label="收货信息">{{ detail.receiverName }} {{ detail.receiverPhone }}</el-descriptions-item>
           <el-descriptions-item label="收货地址">{{ detail.receiverAddress }}</el-descriptions-item>
+          <el-descriptions-item label="支付时间">{{ detail.payTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="发货时间">{{ detail.shipTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="完成时间">{{ detail.confirmTime || detail.finishTime || '-' }}</el-descriptions-item>
         </el-descriptions>
         <el-table :data="detail.items || []" style="margin-top: 18px">
           <el-table-column prop="productName" label="商品" />
@@ -46,8 +55,8 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getAdminOrderDetail, getAdminOrders, shipOrder } from '../../api/order'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { confirmPayment, getAdminOrderDetail, getAdminOrders, shipOrder } from '../../api/order'
 
 const loading = ref(false)
 const orders = ref([])
@@ -63,6 +72,7 @@ const statusOptions = [
   { label: '已取消', value: 4 }
 ]
 const statusText = (status) => statusOptions.find((item) => item.value === status)?.label || '未知'
+const statusType = (status) => ['warning', 'primary', 'success', 'success', 'info'][status] || 'info'
 
 async function load() {
   loading.value = true
@@ -80,8 +90,26 @@ async function openDetail(id) {
   drawerVisible.value = true
 }
 
+async function confirmMoney(id) {
+  const { value } = await ElMessageBox.prompt('确认已收到该订单款项，可填写管理员备注', '确认收款', {
+    inputType: 'textarea',
+    confirmButtonText: '确认收款',
+    cancelButtonText: '取消',
+    inputValidator: (value) => !value || value.length <= 255 || '管理员备注不能超过255个字符'
+  })
+  await confirmPayment(id, { adminRemark: value || '' })
+  ElMessage.success('已确认收款')
+  await load()
+}
+
 async function ship(id) {
-  await shipOrder(id)
+  const { value } = await ElMessageBox.prompt('填写物流单号或配送编号', '订单发货', {
+    confirmButtonText: '发货',
+    cancelButtonText: '取消',
+    inputPattern: /^.{1,64}$/,
+    inputErrorMessage: '物流单号不能为空且不能超过64个字符'
+  })
+  await shipOrder(id, { shippingNo: value })
   ElMessage.success('订单已发货')
   await load()
 }
@@ -100,4 +128,3 @@ onMounted(load)
   justify-content: center;
 }
 </style>
-

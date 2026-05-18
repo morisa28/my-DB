@@ -4,6 +4,7 @@ import com.example.mall.common.PageResult;
 import com.example.mall.common.Result;
 import com.example.mall.dto.OrderCreateDTO;
 import com.example.mall.dto.OrderQueryDTO;
+import com.example.mall.dto.PaymentNoteDTO;
 import com.example.mall.service.OrderService;
 import com.example.mall.vo.OrderCreateResultVO;
 import com.example.mall.vo.OrderDetailVO;
@@ -40,8 +41,14 @@ public class OrderController {
     }
 
     @PutMapping("/{id}/pay")
-    public Result<Void> pay(@PathVariable Long id) {
-        orderService.payOrder(id);
+    public Result<Void> pay(@PathVariable Long id, @Valid @RequestBody(required = false) PaymentNoteDTO dto) {
+        orderService.submitPaymentNote(id, dto);
+        return Result.ok();
+    }
+
+    @PutMapping("/{id}/payment-note")
+    public Result<Void> paymentNote(@PathVariable Long id, @Valid @RequestBody(required = false) PaymentNoteDTO dto) {
+        orderService.submitPaymentNote(id, dto);
         return Result.ok();
     }
 
@@ -50,5 +57,10 @@ public class OrderController {
         orderService.cancelOrder(id);
         return Result.ok();
     }
-}
 
+    @PutMapping("/{id}/confirm-receipt")
+    public Result<Void> confirmReceipt(@PathVariable Long id) {
+        orderService.confirmReceipt(id);
+        return Result.ok();
+    }
+}

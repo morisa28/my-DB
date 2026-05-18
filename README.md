@@ -127,6 +127,7 @@ mall-backend/api-test.http
 - `05-测试报告.md`
 - `06-实验总结.md`
 - `07-后续开发方案.md`
+- `08-接续开发说明.md`
 - `deploy-demo.md`
 - `demo-script.md`
 - `presentation-outline.md`

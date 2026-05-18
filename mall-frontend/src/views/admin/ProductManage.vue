@@ -49,7 +49,23 @@
         </el-form-item>
         <el-form-item label="价格" prop="price"><el-input-number v-model="form.price" :min="0" :precision="2" /></el-form-item>
         <el-form-item label="库存" prop="stock"><el-input-number v-model="form.stock" :min="0" /></el-form-item>
-        <el-form-item label="图片"><el-input v-model="form.imageUrl" /></el-form-item>
+        <el-form-item label="图片">
+          <div class="upload-field">
+            <el-upload
+              :show-file-list="false"
+              :http-request="uploadImage"
+              :before-upload="beforeImageUpload"
+              accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+            >
+              <div v-if="form.imageUrl" class="image-preview">
+                <img :src="form.imageUrl" :alt="form.name || '商品图片'" />
+                <span>更换图片</span>
+              </div>
+              <el-button v-else :icon="Upload" :loading="uploading">上传图片</el-button>
+            </el-upload>
+            <el-input v-model="form.imageUrl" placeholder="上传后自动生成，也可填写外部图片 URL" />
+          </div>
+        </el-form-item>
         <el-form-item label="描述"><el-input v-model="form.description" type="textarea" rows="3" /></el-form-item>
         <el-form-item label="上架"><el-switch v-model="form.status" :active-value="1" :inactive-value="0" /></el-form-item>
       </el-form>
@@ -72,6 +88,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Upload } from '@element-plus/icons-vue'
 import {
   createProduct,
   deleteProduct,
@@ -79,7 +96,8 @@ import {
   getAdminProducts,
   updateProduct,
   updateProductStatus,
-  updateProductStock
+  updateProductStock,
+  uploadProductImage
 } from '../../api/product'
 
 const loading = ref(false)
@@ -88,6 +106,7 @@ const categories = ref([])
 const total = ref(0)
 const dialogVisible = ref(false)
 const stockVisible = ref(false)
+const uploading = ref(false)
 const formRef = ref()
 const query = reactive({ page: 1, size: 10, keyword: '', status: null })
 const form = reactive({ id: null, name: '', categoryId: null, price: 0, stock: 0, imageUrl: '', description: '', status: 1 })
@@ -126,6 +145,37 @@ async function submit() {
   ElMessage.success('保存成功')
   dialogVisible.value = false
   await load()
+}
+
+function beforeImageUpload(file) {
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+  const allowedExts = ['jpg', 'jpeg', 'png', 'webp']
+  const extension = file.name.split('.').pop()?.toLowerCase()
+  if (!allowedTypes.includes(file.type) || !allowedExts.includes(extension)) {
+    ElMessage.error('仅支持 jpg、jpeg、png、webp 图片')
+    return false
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    ElMessage.error('图片大小不能超过2MB')
+    return false
+  }
+  return true
+}
+
+async function uploadImage(options) {
+  uploading.value = true
+  try {
+    const data = new FormData()
+    data.append('file', options.file)
+    const result = await uploadProductImage(data)
+    form.imageUrl = result.url
+    ElMessage.success('图片上传成功')
+    options.onSuccess(result)
+  } catch (error) {
+    options.onError(error)
+  } finally {
+    uploading.value = false
+  }
 }
 
 async function changeStatus(row, status) {
@@ -183,5 +233,46 @@ onMounted(() => {
   display: flex;
   justify-content: center;
 }
-</style>
 
+.upload-field {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.image-preview {
+  width: 180px;
+  height: 112px;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.image-preview span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 6px 8px;
+  color: #fff;
+  text-align: center;
+  background: rgb(17 24 39 / 72%);
+}
+
+@media (max-width: 720px) {
+  .upload-field {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

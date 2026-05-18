@@ -34,6 +34,8 @@ export DB_URL="jdbc:mysql://localhost:3306/mall_db?useUnicode=true&characterEnco
 export DB_USERNAME="root"
 export DB_PASSWORD="你的密码"
 export JWT_SECRET="至少32字节的JWT密钥"
+export UPLOAD_DIR="./uploads"
+export UPLOAD_BASE_URL="/uploads"
 ```
 
 ## 演示模式启动
@@ -110,6 +112,7 @@ mall-backend/api-test.http
 
 - 用户注册登录和 JWT 鉴权。
 - 商品分页、搜索、分类筛选。
+- 管理员上传商品主图，图片保存到持久化上传目录并通过 `/uploads/**` 访问。
 - 购物车同用户同商品唯一记录。
 - 地址默认值互斥。
 - 订单创建事务：订单主表、订单明细、库存扣减、销量增加、购物车清理同事务完成。
@@ -139,5 +142,5 @@ mall-backend/api-test.http
 2. 启动后端。
 3. 启动前端。
 4. 使用 `user / user123456` 完成浏览商品、加入购物车、新增地址、提交订单、填写付款备注和确认收货。
-5. 使用 `admin / admin123456` 查看统计、筛选订单、确认收款并发货。
+5. 使用 `admin / admin123456` 上传商品图片、查看统计、筛选订单、确认收款并发货。
 6. 在 MySQL 中观察 `order_info`、`order_item`、`product`、`cart_item` 表的数据变化。

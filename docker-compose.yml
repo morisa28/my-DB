@@ -37,9 +37,16 @@ services:
       DB_PASSWORD: "${MYSQL_ROOT_PASSWORD:-mall_demo_root_2026}"
       JWT_SECRET: "${JWT_SECRET:-mall-demo-jwt-secret-at-least-32-bytes-2026}"
       JWT_EXPIRATION_MINUTES: "${JWT_EXPIRATION_MINUTES:-10080}"
+      UPLOAD_DIR: "${UPLOAD_DIR:-/app/uploads}"
+      UPLOAD_BASE_URL: "${UPLOAD_BASE_URL:-/uploads}"
+      UPLOAD_MAX_FILE_SIZE: "${UPLOAD_MAX_FILE_SIZE:-2MB}"
+      UPLOAD_MAX_REQUEST_SIZE: "${UPLOAD_MAX_REQUEST_SIZE:-3MB}"
+      UPLOAD_MAX_SIZE_BYTES: "${UPLOAD_MAX_SIZE_BYTES:-2097152}"
       TZ: "Asia/Shanghai"
     ports:
       - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - mall-upload-data:/app/uploads
 
   frontend:
     build:
@@ -53,3 +60,4 @@ services:
 
 volumes:
   mall-mysql-data:
+  mall-upload-data:

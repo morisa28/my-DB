@@ -7,6 +7,7 @@
 @createdOrderId =
 @cancelOrderCartItemId =
 @cancelOrderId =
+@uploadedImageUrl =
 
 ### 0. 前端代理健康检查，演示模式推荐
 GET {{baseUrl}}/health
@@ -204,15 +205,42 @@ Authorization: Bearer {{userToken}}
 GET {{baseUrl}}/admin/statistics
 Authorization: Bearer {{adminToken}}
 
-### 26. 管理员查看所有订单状态样例
+### 26. 管理员上传商品图片
+# 将 sample-product.png 替换为本地真实图片后执行。
+POST {{baseUrl}}/admin/upload/product-image
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=mall-upload-boundary
+
+--mall-upload-boundary
+Content-Disposition: form-data; name="file"; filename="sample-product.png"
+Content-Type: image/png
+
+< ./sample-product.png
+--mall-upload-boundary--
+
+> {% client.global.set("uploadedImageUrl", response.body.data.url); %}
+
+### 27. 普通用户上传商品图片，预期返回 403
+POST {{baseUrl}}/admin/upload/product-image
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=mall-upload-boundary
+
+--mall-upload-boundary
+Content-Disposition: form-data; name="file"; filename="sample-product.png"
+Content-Type: image/png
+
+< ./sample-product.png
+--mall-upload-boundary--
+
+### 28. 管理员查看所有订单状态样例
 GET {{baseUrl}}/admin/orders?page=1&size=10
 Authorization: Bearer {{adminToken}}
 
-### 27. 普通用户访问后台，预期返回 403
+### 29. 普通用户访问后台，预期返回 403
 GET {{baseUrl}}/admin/statistics
 Authorization: Bearer {{userToken}}
 
-### 28. 超库存加入购物车，预期失败
+### 30. 超库存加入购物车，预期失败
 POST {{baseUrl}}/cart
 Authorization: Bearer {{userToken}}
 Content-Type: application/json

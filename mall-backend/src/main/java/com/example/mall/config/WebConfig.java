@@ -5,12 +5,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.nio.file.Path;
 
 @Configuration
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
     private final JwtAuthInterceptor jwtAuthInterceptor;
+    private final UploadProperties uploadProperties;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -25,6 +29,20 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/products/*",
                         "/api/products/search"
                 );
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String baseUrl = uploadProperties.getBaseUrl().startsWith("/")
+                ? uploadProperties.getBaseUrl()
+                : "/" + uploadProperties.getBaseUrl();
+        baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        Path uploadRoot = Path.of(uploadProperties.getDir()).toAbsolutePath().normalize();
+        String resourceLocation = uploadRoot.toUri().toString();
+        resourceLocation = resourceLocation.endsWith("/") ? resourceLocation : resourceLocation + "/";
+        registry.addResourceHandler(baseUrl + "/**")
+                .addResourceLocations(resourceLocation)
+                .setCachePeriod(3600);
     }
 
     @Override

@@ -15,4 +15,6 @@ export const updateProduct = (id, data) => request.put(`/admin/products/${id}`, 
 export const deleteProduct = (id) => request.delete(`/admin/products/${id}`)
 export const updateProductStatus = (id, status) => request.put(`/admin/products/${id}/status`, { status })
 export const updateProductStock = (id, stock) => request.put(`/admin/products/${id}/stock`, { stock })
-
+export const uploadProductImage = (data) => request.post('/admin/upload/product-image', data, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+})

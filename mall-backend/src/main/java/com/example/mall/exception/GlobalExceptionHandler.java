@@ -3,6 +3,7 @@ package com.example.mall.exception;
 import com.example.mall.common.Result;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.validation.BindException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -38,9 +39,13 @@ public class GlobalExceptionHandler {
         return Result.error(400, e.getMessage());
     }
 
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public Result<Void> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException e) {
+        return Result.error(400, "上传文件大小超过限制");
+    }
+
     @ExceptionHandler(Exception.class)
     public Result<Void> handleException(Exception e) {
         return Result.error(500, "系统错误：" + e.getMessage());
     }
 }
-

@@ -9,6 +9,10 @@ spring:
     url: ${DB_URL:jdbc:mysql://localhost:3306/mall_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:123456}
+  servlet:
+    multipart:
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:2MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:3MB}
   jackson:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
@@ -26,4 +30,8 @@ mall:
   jwt:
     secret: ${JWT_SECRET:mall-course-demo-secret-key-change-me-2026}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:10080}
-
+  upload:
+    dir: ${UPLOAD_DIR:./uploads}
+    base-url: ${UPLOAD_BASE_URL:/uploads}
+    max-size-bytes: ${UPLOAD_MAX_SIZE_BYTES:2097152}
+    allowed-extensions: ${UPLOAD_ALLOWED_EXTENSIONS:jpg,jpeg,png,webp}

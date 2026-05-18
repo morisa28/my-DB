@@ -59,7 +59,8 @@ Browser
   ↓ http://localhost:8088
 Nginx / Vue
   ├── /      -> 前端静态页面
-  └── /api   -> Spring Boot 后端
+  ├── /api   -> Spring Boot 后端
+  └── /uploads -> Spring Boot 上传文件访问
                   ↓
                 MySQL 8
 ```
@@ -71,6 +72,13 @@ Compose 服务：
 | `mysql` | MySQL 8，自动执行初始化 SQL | `3307 -> 3306` |
 | `backend` | Spring Boot 3 后端 | `8080 -> 8080` |
 | `frontend` | Nginx 托管 Vue 构建产物 | `8088 -> 80` |
+
+持久化卷：
+
+| 卷 | 用途 |
+|---|---|
+| `mall-mysql-data` | MySQL 数据 |
+| `mall-upload-data` | 商品图片上传文件，默认挂载到后端容器 `/app/uploads` |
 
 ## 4. 演示前检查
 
@@ -119,6 +127,12 @@ SELECT * FROM order_item ORDER BY id DESC;
 SELECT id, name, stock, sales FROM product ORDER BY id;
 ```
 
+上传图片访问检查：
+
+```bash
+curl -I http://localhost:8088/uploads/<上传返回路径>
+```
+
 ## 6. 重置演示数据
 
 如果需要恢复初始化数据，删除 MySQL 数据卷并重启：
@@ -128,7 +142,7 @@ docker compose down -v
 docker compose up -d --build
 ```
 
-注意：`down -v` 会删除容器数据库数据，只适合演示环境重置。
+注意：`down -v` 会删除容器数据库数据和上传图片卷，只适合演示环境重置。
 
 ## 7. 停止服务
 
@@ -154,6 +168,8 @@ docker compose down -v
 MYSQL_PORT=3307
 BACKEND_PORT=8080
 FRONTEND_PORT=8088
+UPLOAD_DIR=/app/uploads
+UPLOAD_BASE_URL=/uploads
 ```
 
 修改后重新启动：
@@ -182,6 +198,22 @@ curl http://localhost:8088/api/health
 docker compose down -v
 docker compose up -d --build
 ```
+
+### 商品图片上传失败
+
+检查：
+
+```bash
+docker compose logs backend
+docker compose exec backend ls -la /app/uploads
+```
+
+重点确认：
+
+- 图片格式是否为 `jpg`、`jpeg`、`png`、`webp`。
+- 图片大小是否不超过 2MB。
+- `mall-upload-data` 卷是否挂载到后端容器 `/app/uploads`。
+- 前端 Nginx 是否把 `/uploads/` 代理到后端。
 
 ### 后端启动失败
 
@@ -237,4 +269,4 @@ npm install --no-bin-links
 - 支付为线下付款备注 + 管理员确认收款，当前未接入真实支付网关。
 - 数据库密码和 JWT 密钥可通过 `.env` 修改，但未接入密钥管理系统。
 - 未配置监控告警、备份恢复、CI/CD。
-- 前端图片使用外部示例图片 URL。
+- 初始化商品仍使用外部示例图片 URL；后台新增或编辑商品时可上传本地持久化图片。

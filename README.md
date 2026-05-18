@@ -111,6 +111,14 @@ mall-backend/api-test.http
 
 该文件包含注册、登录、分类、商品、购物车、地址、下单、付款备注、管理员确认收款、发货、确认收货、取消订单和统计接口示例。
 
+上线前业务验收脚本：
+
+```bash
+node scripts/practical-flow-check.mjs
+```
+
+脚本默认访问 `http://localhost:8088/api`，可通过 `BASE_URL` 覆盖。
+
 ## 重点展示功能
 
 - 用户注册登录和 JWT 鉴权。

@@ -156,6 +156,7 @@ node scripts/practical-flow-check.mjs
 - `14-阶段八-前端实用体验.md`
 - `15-阶段九-测试和上线前验证.md`
 - `16-阶段十-服务器部署前交付包.md`
+- `17-整体隐患审查报告.md`
 - `deploy-demo.md`
 - `demo-script.md`
 - `database-migration.md`

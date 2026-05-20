@@ -127,6 +127,8 @@ const cancelLogs = (await request('GET', `/admin/orders/${cancelOrderId}/logs`, 
 assert(cancelLogs.some((item) => item.action === 'CANCEL_ORDER'), '取消订单未写入操作日志')
 
 await request('PUT', '/admin/users/3/status', { status: 0 }, adminToken)
+const adminOperationLogs = (await request('GET', '/admin/operation-logs?module=USER&action=UPDATE_USER_STATUS', null, adminToken)).body.data.records || []
+assert(adminOperationLogs.some((item) => item.targetId === 3), '用户状态变更未写入后台操作日志')
 const disabledToken = await request('GET', '/cart', null, aliceToken, false)
 assert(disabledToken.http === 403, '禁用用户旧 Token 应返回 403')
 await request('PUT', '/admin/users/3/status', { status: 1 }, adminToken)
@@ -144,6 +146,7 @@ console.log(JSON.stringify({
   imageUrl,
   lowStockCount: lowStock.body.data.records.length,
   operationLogCount: operationLogs.length,
+  adminOperationLogCount: adminOperationLogs.length,
   userTotalOrders: summary.body.data.totalOrders,
   checks: 'passed'
 }, null, 2))

@@ -61,11 +61,12 @@ abstract class MallIntegrationTestBase {
     void resetDatabase() throws Exception {
         executeStatement("SET FOREIGN_KEY_CHECKS=0");
         for (String table : new String[]{
-                "order_operation_log", "order_item", "order_info", "cart_item",
+                "admin_operation_log", "order_operation_log", "order_item", "order_info", "cart_item",
                 "address", "product", "category", "`user`"
         }) {
             executeStatement("DROP TABLE IF EXISTS " + table);
         }
+        executeStatement("DROP TABLE IF EXISTS schema_migration_history");
         executeStatement("SET FOREIGN_KEY_CHECKS=1");
         executeScript("sql/schema.sql");
         executeScript("sql/data.sql");

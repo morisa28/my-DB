@@ -29,6 +29,14 @@ class SecurityAndValidationIntegrationTest extends MallIntegrationTestBase {
 
         ResponseEntity<JsonNode> invalidQuery = getJson("/api/admin/orders?page=0&size=500&status=9", adminToken);
         assertThat(invalidQuery.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+        assertOk(putJson("/api/admin/users/3/status", java.util.Map.of("status", 0), adminToken));
+        ResponseEntity<JsonNode> operationLogs = getJson("/api/admin/operation-logs?module=USER&action=UPDATE_USER_STATUS", adminToken);
+        assertOk(operationLogs);
+        JsonNode firstLog = operationLogs.getBody().path("data").path("records").path(0);
+        assertThat(firstLog.path("module").asText()).isEqualTo("USER");
+        assertThat(firstLog.path("action").asText()).isEqualTo("UPDATE_USER_STATUS");
+        assertThat(firstLog.path("targetId").asLong()).isEqualTo(3L);
     }
 
     @Test

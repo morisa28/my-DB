@@ -252,11 +252,19 @@ Authorization: Bearer {{adminToken}}
 GET {{baseUrl}}/admin/users/2/order-summary
 Authorization: Bearer {{adminToken}}
 
-### 33. 普通用户访问后台，预期返回 403
+### 33. 管理员查看后台操作日志
+GET {{baseUrl}}/admin/operation-logs?page=1&size=10
+Authorization: Bearer {{adminToken}}
+
+### 34. 管理员按用户模块筛选后台操作日志
+GET {{baseUrl}}/admin/operation-logs?page=1&size=10&module=USER&action=UPDATE_USER_STATUS
+Authorization: Bearer {{adminToken}}
+
+### 35. 普通用户访问后台，预期返回 403
 GET {{baseUrl}}/admin/statistics
 Authorization: Bearer {{userToken}}
 
-### 34. 超库存加入购物车，预期失败
+### 36. 超库存加入购物车，预期失败
 POST {{baseUrl}}/cart
 Authorization: Bearer {{userToken}}
 Content-Type: application/json

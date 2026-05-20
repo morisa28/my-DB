@@ -8,6 +8,7 @@
         <el-menu-item index="/admin/categories"><el-icon><Collection /></el-icon><span>分类管理</span></el-menu-item>
         <el-menu-item index="/admin/orders"><el-icon><Tickets /></el-icon><span>订单管理</span></el-menu-item>
         <el-menu-item index="/admin/users"><el-icon><User /></el-icon><span>用户管理</span></el-menu-item>
+        <el-menu-item index="/admin/operation-logs"><el-icon><Document /></el-icon><span>操作日志</span></el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
@@ -101,4 +102,3 @@ function logout() {
   }
 }
 </style>
-

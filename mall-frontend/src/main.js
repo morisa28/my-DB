@@ -26,6 +26,7 @@ import { ElUpload } from 'element-plus/es/components/upload/index.mjs'
 import {
   Collection,
   DataBoard,
+  Document,
   Goods,
   Search,
   ShoppingBag,
@@ -82,6 +83,7 @@ for (const component of elementComponents) {
 
 app.component('Collection', Collection)
 app.component('DataBoard', DataBoard)
+app.component('Document', Document)
 app.component('Goods', Goods)
 app.component('Search', Search)
 app.component('ShoppingBag', ShoppingBag)

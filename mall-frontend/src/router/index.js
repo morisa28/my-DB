@@ -27,7 +27,8 @@ const routes = [
       { path: 'products', name: 'admin-products', component: () => import('../views/admin/ProductManage.vue') },
       { path: 'categories', name: 'admin-categories', component: () => import('../views/admin/CategoryManage.vue') },
       { path: 'orders', name: 'admin-orders', component: () => import('../views/admin/OrderManage.vue') },
-      { path: 'users', name: 'admin-users', component: () => import('../views/admin/UserManage.vue') }
+      { path: 'users', name: 'admin-users', component: () => import('../views/admin/UserManage.vue') },
+      { path: 'operation-logs', name: 'admin-operation-logs', component: () => import('../views/admin/OperationLog.vue') }
     ]
   }
 ]

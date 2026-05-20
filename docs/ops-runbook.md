@@ -6,16 +6,18 @@
 
 | Compose 服务 | 容器名 | 作用 |
 |---|---|---|
-| `mysql` | `mall-mysql` | MySQL 8 数据库 |
-| `backend` | `mall-backend` | Spring Boot 3 API 服务 |
-| `frontend` | `mall-frontend` | Nginx 托管 Vue 前端并代理 `/api`、`/uploads` |
+| `mysql` | Compose 自动生成，例如 `mall-platform-mysql-1` | MySQL 8 数据库 |
+| `backend` | Compose 自动生成，例如 `mall-platform-backend-1` | Spring Boot 3 API 服务 |
+| `frontend` | Compose 自动生成，例如 `mall-platform-frontend-1` | Nginx 托管 Vue 前端并代理 `/api`、`/uploads` |
 
 持久化数据：
 
 | 数据 | 默认位置 |
 |---|---|
-| MySQL 数据 | Docker 命名卷 `mall-mysql-data` |
-| 商品图片 | Docker 命名卷 `mall-upload-data`，容器内 `/app/uploads` |
+| MySQL 数据 | Docker 命名卷 `mall-platform_mall-mysql-data` |
+| 商品图片 | Docker 命名卷 `mall-platform_mall-upload-data`，容器内 `/app/uploads` |
+
+说明：生产环境通过 `.env` 中的 `COMPOSE_PROJECT_NAME=mall-platform` 固定资源前缀。不要随意修改该值，否则 Compose 会创建新的容器和命名卷，看起来像“数据丢失”。
 
 ## 2. 启动、停止和重启
 

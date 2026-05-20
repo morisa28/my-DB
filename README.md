@@ -56,6 +56,8 @@ cp .env.prod.example .env
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
+生产模板包含 `COMPOSE_PROJECT_NAME=mall-platform`，用于固定服务器上的 Compose 资源前缀。Compose 不再固定 `container_name`，因此本地多个 worktree 可用不同端口并行验收。
+
 访问地址：
 
 ```text
@@ -168,6 +170,7 @@ node scripts/practical-flow-check.mjs
 - `17-整体隐患审查报告.md`
 - `18-阶段十一-第一批隐患修复.md`
 - `19-阶段十二-订单并发幂等修复.md`
+- `20-阶段十三-Docker运行态复验与Compose隔离修复.md`
 - `deploy-demo.md`
 - `demo-script.md`
 - `database-migration.md`

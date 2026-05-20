@@ -4,7 +4,6 @@ services:
       context: .
       dockerfile: mall-mysql/Dockerfile
     image: mall-platform-mysql
-    container_name: mall-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
@@ -28,7 +27,6 @@ services:
     build:
       context: ./mall-backend
     image: mall-platform-backend
-    container_name: mall-backend
     restart: unless-stopped
     depends_on:
       mysql:
@@ -60,7 +58,6 @@ services:
     build:
       context: ./mall-frontend
     image: mall-platform-frontend
-    container_name: mall-frontend
     restart: unless-stopped
     depends_on:
       backend:

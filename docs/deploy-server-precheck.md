@@ -87,6 +87,8 @@ cp .env.prod.example .env
 生产部署必须修改：
 
 ```text
+COMPOSE_PROJECT_NAME=mall-platform
+
 MYSQL_ROOT_PASSWORD=替换为强密码
 MYSQL_DATABASE=mall_db
 MYSQL_USER=mall_app
@@ -108,6 +110,7 @@ UPLOAD_MAX_SIZE_BYTES=2097152
 注意：
 
 - `.env` 已被 `.gitignore` 忽略，不要提交到 Git。
+- `COMPOSE_PROJECT_NAME` 用于固定 Compose 网络、容器和数据卷前缀；服务器部署后不要随意修改，否则 Compose 会创建一套新的容器和命名卷。
 - 生产环境推荐使用 `docker-compose.prod.yml`，该文件会强制要求 `MYSQL_ROOT_PASSWORD`、`MYSQL_USER`、`MYSQL_PASSWORD`、`JWT_SECRET`、`CORS_ALLOWED_ORIGINS`。
 - `JWT_SECRET` 不能使用 `.env.example` 中的演示值。
 - 生产环境应用连接数据库禁止使用 root 账号。
@@ -120,7 +123,7 @@ UPLOAD_MAX_SIZE_BYTES=2097152
 当前 Compose 使用命名卷：
 
 ```text
-mall-upload-data:/app/uploads
+mall-platform_mall-upload-data:/app/uploads
 ```
 
 这能保证容器重启或重建后图片不丢失。服务器上线前需要确认：

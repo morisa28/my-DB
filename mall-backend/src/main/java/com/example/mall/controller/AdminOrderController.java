@@ -27,7 +27,7 @@ public class AdminOrderController {
     private final OrderService orderService;
 
     @GetMapping
-    public Result<PageResult<OrderVO>> list(OrderQueryDTO query) {
+    public Result<PageResult<OrderVO>> list(@Valid OrderQueryDTO query) {
         return Result.ok(orderService.pageAdminOrders(query));
     }
 

@@ -25,6 +25,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/user/register",
                         "/api/user/login",
                         "/api/health",
+                        "/api/ready",
                         "/api/categories",
                         "/api/products",
                         "/api/products/*",

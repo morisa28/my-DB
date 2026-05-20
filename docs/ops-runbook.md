@@ -63,13 +63,14 @@ docker compose down -v
 
 ```bash
 curl http://localhost:8088/api/health
-curl http://localhost:8080/api/health
+curl http://localhost:8088/api/ready
 ```
 
 从外网检查：
 
 ```bash
 curl https://你的域名/api/health
+curl https://你的域名/api/ready
 ```
 
 正常结果应包含：
@@ -79,6 +80,11 @@ UP
 ```
 
 如果外网失败、本机成功，优先检查安全组、服务器防火墙、HTTPS 证书和外层反向代理。
+
+说明：
+
+- `/api/health` 只表示后端进程存活。
+- `/api/ready` 会检查数据库连接，部署、发布和监控应优先使用该接口判断商城是否真正可用。
 
 ## 4. 日志查看
 
@@ -185,6 +191,7 @@ docker compose up -d
 
 ```bash
 curl http://localhost:8088/api/health
+curl http://localhost:8088/api/ready
 ```
 
 ## 8. 更新发布流程
@@ -214,6 +221,7 @@ docker compose up -d --build
 ```bash
 docker compose ps
 curl http://localhost:8088/api/health
+curl http://localhost:8088/api/ready
 ```
 
 7. 执行业务验收：
@@ -276,6 +284,7 @@ docker compose logs --tail=100 frontend
 
 ```bash
 curl http://localhost:8088/api/health
+curl http://localhost:8088/api/ready
 docker compose logs --tail=200 backend
 ```
 

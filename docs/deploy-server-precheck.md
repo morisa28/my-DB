@@ -81,7 +81,7 @@ Compose 默认端口：
 从模板复制：
 
 ```bash
-cp .env.example .env
+cp .env.prod.example .env
 ```
 
 生产部署必须修改：
@@ -89,14 +89,11 @@ cp .env.example .env
 ```text
 MYSQL_ROOT_PASSWORD=替换为强密码
 MYSQL_DATABASE=mall_db
-MYSQL_PORT=3307
-DB_USERNAME=root
-DB_PASSWORD=必须与 MYSQL_ROOT_PASSWORD 保持一致，除非创建了独立数据库用户
+MYSQL_USER=mall_app
+MYSQL_PASSWORD=替换为应用数据库用户强密码
 
-BACKEND_PORT=8080
 FRONTEND_PORT=8088
 
-SPRING_PROFILES_ACTIVE=prod
 JWT_SECRET=替换为至少32字节的强随机密钥
 JWT_EXPIRATION_MINUTES=10080
 CORS_ALLOWED_ORIGINS=https://你的域名
@@ -111,8 +108,10 @@ UPLOAD_MAX_SIZE_BYTES=2097152
 注意：
 
 - `.env` 已被 `.gitignore` 忽略，不要提交到 Git。
-- `SPRING_PROFILES_ACTIVE=prod` 时，`DB_URL`、`DB_USERNAME`、`DB_PASSWORD`、`JWT_SECRET`、`CORS_ALLOWED_ORIGINS` 必须通过环境变量有效提供。
+- 生产环境推荐使用 `docker-compose.prod.yml`，该文件会强制要求 `MYSQL_ROOT_PASSWORD`、`MYSQL_USER`、`MYSQL_PASSWORD`、`JWT_SECRET`、`CORS_ALLOWED_ORIGINS`。
 - `JWT_SECRET` 不能使用 `.env.example` 中的演示值。
+- 生产环境应用连接数据库禁止使用 root 账号。
+- 生产环境禁止 `CORS_ALLOWED_ORIGINS=*`。
 - 如果外层反代使用 HTTPS，`CORS_ALLOWED_ORIGINS` 应填写 HTTPS 域名。
 - 若存在多个前端域名，用逗号分隔，例如 `https://example.com,https://www.example.com`。
 
@@ -153,10 +152,12 @@ mall-backend/src/main/resources/sql/schema.sql
 mall-backend/src/main/resources/sql/data.sql
 ```
 
+当前实现会把初始化 SQL 构建进 `mall-platform-mysql` 镜像，避免 Docker Desktop + WSL 场景下单文件 bind mount 在重启后失效。
+
 启动：
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 docker compose ps
 ```
 
@@ -164,7 +165,7 @@ docker compose ps
 
 ```bash
 curl http://localhost:8088/api/health
-curl http://localhost:8080/api/health
+curl http://localhost:8088/api/ready
 ```
 
 已有数据库升级时不要执行：
@@ -209,6 +210,7 @@ docker compose down
 docker compose up -d --build
 docker compose ps
 curl http://localhost:8088/api/health
+curl http://localhost:8088/api/ready
 node scripts/practical-flow-check.mjs
 ```
 
@@ -216,6 +218,7 @@ node scripts/practical-flow-check.mjs
 
 - 三个容器运行正常。
 - `/api/health` 返回 `UP`。
+- `/api/ready` 返回 `UP` 且 `database=UP`。
 - 默认管理员可登录。
 - 普通用户可下单、提交付款备注、取消待支付订单。
 - 管理员可确认收款、发货、上传商品图片。
@@ -258,9 +261,11 @@ node scripts/practical-flow-check.mjs
 - [ ] `.env` 已创建且未提交 Git。
 - [ ] `SPRING_PROFILES_ACTIVE=prod`。
 - [ ] `JWT_SECRET` 已替换为强随机密钥。
-- [ ] `MYSQL_ROOT_PASSWORD` 和 `DB_PASSWORD` 已替换为强密码。
+- [ ] `MYSQL_ROOT_PASSWORD` 和 `MYSQL_PASSWORD` 已替换为强密码。
+- [ ] 应用数据库用户不是 root。
 - [ ] `CORS_ALLOWED_ORIGINS` 已设置为正式域名。
 - [ ] 公网未开放 MySQL 端口。
+- [ ] `/api/ready` 已验证数据库可用。
 - [ ] 上传目录卷或绑定挂载已确认可持久化。
 - [ ] 数据库备份命令已测试。
 - [ ] 上传文件备份方式已测试。

@@ -49,11 +49,19 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
+生产部署前应使用生产模板创建 `.env`，并优先使用生产 Compose：
+
+```bash
+cp .env.prod.example .env
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
 访问地址：
 
 ```text
 前端入口：http://localhost:8088
 后端健康检查：http://localhost:8088/api/health
+后端就绪检查：http://localhost:8088/api/ready
 MySQL：localhost:3307
 ```
 
@@ -71,6 +79,7 @@ docs/deploy-demo.md
 docs/database-migration.md
 docs/deploy-server-precheck.md
 docs/ops-runbook.md
+docs/17-整体隐患审查报告.md
 ```
 
 ## 启动后端
@@ -157,6 +166,7 @@ node scripts/practical-flow-check.mjs
 - `15-阶段九-测试和上线前验证.md`
 - `16-阶段十-服务器部署前交付包.md`
 - `17-整体隐患审查报告.md`
+- `18-阶段十一-第一批隐患修复.md`
 - `deploy-demo.md`
 - `demo-script.md`
 - `database-migration.md`

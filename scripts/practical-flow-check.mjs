@@ -54,6 +54,8 @@ async function uploadImage(adminToken) {
 
 const health = await request('GET', '/health')
 assert(health.body.data.status === 'UP', '健康检查失败')
+const ready = await request('GET', '/ready')
+assert(ready.body.data.status === 'UP' && ready.body.data.database === 'UP', '数据库就绪检查失败')
 
 const userToken = await login('user', 'user123456')
 const adminToken = await login('admin', 'admin123456')

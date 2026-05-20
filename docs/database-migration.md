@@ -48,17 +48,20 @@ mysql -u root -p mall_db < mall-backend/src/main/resources/sql/migration/V202605
 
 ## 备份建议
 
-执行任何 migration 前先备份：
+执行任何 migration 前先备份数据库和上传目录：
 
 ```bash
-mysqldump -u root -p --single-transaction --routines --triggers mall_db > mall_db_backup.sql
+bash scripts/backup-db.sh
+bash scripts/backup-uploads.sh
 ```
 
-恢复示例：
+恢复演练优先恢复到临时库：
 
 ```bash
-mysql -u root -p mall_db < mall_db_backup.sql
+RESTORE_DATABASE=mall_db_restore bash scripts/restore-db.sh backups/db/<backup-file>.sql.gz
 ```
+
+详细流程见 `docs/backup-and-restore.md`。
 
 ## 开发约定
 
@@ -67,3 +70,4 @@ mysql -u root -p mall_db < mall_db_backup.sql
 - `migration/` 保存增量升级脚本，文件名格式建议：`VYYYYMMDD__description.sql`。
 - 修改表结构后必须同步更新 `docs/03-数据库设计.md` 和 `docs/05-测试报告.md`。
 - 服务器已有数据时，禁止执行 `docker compose down -v` 来“升级数据库”。
+- 生产环境恢复前必须先恢复到临时库验证，不要直接覆盖正式库。

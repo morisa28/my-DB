@@ -72,6 +72,7 @@ docs/deploy-demo.md
 docs/database-migration.md
 docs/deploy-server-precheck.md
 docs/ops-runbook.md
+docs/backup-and-restore.md
 ```
 
 ## 生产模式部署
@@ -148,6 +149,27 @@ node scripts/practical-flow-check.mjs
 
 脚本默认访问 `http://localhost:8088/api`，可通过 `BASE_URL` 覆盖。
 
+## 备份与恢复
+
+上线或执行数据库迁移前，先备份数据库和上传目录：
+
+```bash
+bash scripts/backup-db.sh
+bash scripts/backup-uploads.sh
+```
+
+数据库恢复脚本默认恢复到临时库，避免误覆盖正式库：
+
+```bash
+RESTORE_DATABASE=mall_db_restore bash scripts/restore-db.sh backups/db/<backup-file>.sql.gz
+```
+
+详细流程见：
+
+```text
+docs/backup-and-restore.md
+```
+
 ## 重点展示功能
 
 - 用户注册登录和 JWT 鉴权。
@@ -198,6 +220,8 @@ node scripts/practical-flow-check.mjs
 - `21-阶段十四-库存流水审计.md`
 - `22-阶段十五-支付单与回调日志预留.md`
 - `23-阶段十六-退款售后模型预留.md`
+- `24-阶段十七-备份恢复脚本.md`
+- `backup-and-restore.md`
 - `deploy-demo.md`
 - `demo-script.md`
 - `database-migration.md`

@@ -14,6 +14,7 @@ import com.example.mall.entity.CartItem;
 import com.example.mall.entity.OrderIdempotency;
 import com.example.mall.entity.OrderInfo;
 import com.example.mall.entity.OrderItem;
+import com.example.mall.entity.PaymentOrder;
 import com.example.mall.entity.Product;
 import com.example.mall.entity.StockMovement;
 import com.example.mall.entity.User;
@@ -23,6 +24,7 @@ import com.example.mall.mapper.CartItemMapper;
 import com.example.mall.mapper.OrderIdempotencyMapper;
 import com.example.mall.mapper.OrderInfoMapper;
 import com.example.mall.mapper.OrderItemMapper;
+import com.example.mall.mapper.PaymentOrderMapper;
 import com.example.mall.mapper.ProductMapper;
 import com.example.mall.mapper.StockMovementMapper;
 import com.example.mall.mapper.UserMapper;
@@ -61,12 +63,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
     private static final int IDEMPOTENCY_SUCCEEDED = 1;
     private static final String MOVEMENT_ORDER_DECREASE = "ORDER_DECREASE";
     private static final String MOVEMENT_ORDER_CANCEL_RESTORE = "ORDER_CANCEL_RESTORE";
+    private static final String PAYMENT_CHANNEL_OFFLINE = "OFFLINE";
+    private static final int PAYMENT_STATUS_SUCCESS = 1;
 
     private final AddressMapper addressMapper;
     private final CartItemMapper cartItemMapper;
     private final ProductMapper productMapper;
     private final OrderItemMapper orderItemMapper;
     private final OrderIdempotencyMapper orderIdempotencyMapper;
+    private final PaymentOrderMapper paymentOrderMapper;
     private final StockMovementMapper stockMovementMapper;
     private final UserMapper userMapper;
 
@@ -200,10 +205,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         if (!Integer.valueOf(STATUS_WAITING_PAYMENT).equals(order.getStatus())) {
             throw new BusinessException("只有待支付订单可以确认收款");
         }
+        LocalDateTime payTime = LocalDateTime.now();
         order.setStatus(STATUS_WAITING_SHIPMENT);
-        order.setPayTime(LocalDateTime.now());
+        order.setPayTime(payTime);
         updateAdminRemark(order, dto == null ? null : dto.getAdminRemark());
         updateById(order);
+        recordOfflinePaymentOrder(order, payTime);
     }
 
     @Override
@@ -406,6 +413,19 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         stockMovementMapper.insert(movement);
     }
 
+    private void recordOfflinePaymentOrder(OrderInfo order, LocalDateTime paidTime) {
+        PaymentOrder paymentOrder = new PaymentOrder();
+        paymentOrder.setOrderId(order.getId());
+        paymentOrder.setOrderNo(order.getOrderNo());
+        paymentOrder.setPaymentNo(generatePaymentNo());
+        paymentOrder.setChannel(PAYMENT_CHANNEL_OFFLINE);
+        paymentOrder.setAmount(order.getTotalAmount());
+        paymentOrder.setStatus(PAYMENT_STATUS_SUCCESS);
+        paymentOrder.setPaidTime(paidTime);
+        paymentOrder.setThirdPartyTradeNo(normalizeText(order.getPaymentNote()));
+        paymentOrderMapper.insert(paymentOrder);
+    }
+
     private String normalizeText(String value) {
         if (value == null) {
             return null;
@@ -429,5 +449,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
         return "M" + time + suffix;
+    }
+
+    private String generatePaymentNo() {
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
+        String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        return "P" + time + suffix;
     }
 }

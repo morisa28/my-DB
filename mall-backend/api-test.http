@@ -165,6 +165,7 @@ GET {{baseUrl}}/admin/orders?page=1&size=10&status=0
 Authorization: Bearer {{adminToken}}
 
 ### 17. 管理员确认收款
+# 数据库观察点：payment_order 新增 OFFLINE 支付单
 POST {{baseUrl}}/admin/orders/{{createdOrderId}}/confirm-payment
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json

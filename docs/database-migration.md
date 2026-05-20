@@ -31,6 +31,7 @@ mall-backend/src/main/resources/sql/migration/V20260519__practical_order_workflo
 mall-backend/src/main/resources/sql/migration/V20260520__session_security.sql
 mall-backend/src/main/resources/sql/migration/V20260520_2__order_idempotency.sql
 mall-backend/src/main/resources/sql/migration/V20260520_3__stock_movement.sql
+mall-backend/src/main/resources/sql/migration/V20260520_4__payment_models.sql
 ```
 
 执行示例：
@@ -40,6 +41,7 @@ mysql -u root -p mall_db < mall-backend/src/main/resources/sql/migration/V202605
 mysql -u root -p mall_db < mall-backend/src/main/resources/sql/migration/V20260520__session_security.sql
 mysql -u root -p mall_db < mall-backend/src/main/resources/sql/migration/V20260520_2__order_idempotency.sql
 mysql -u root -p mall_db < mall-backend/src/main/resources/sql/migration/V20260520_3__stock_movement.sql
+mysql -u root -p mall_db < mall-backend/src/main/resources/sql/migration/V20260520_4__payment_models.sql
 ```
 
 ## 备份建议

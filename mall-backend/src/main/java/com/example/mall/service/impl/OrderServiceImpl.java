@@ -15,6 +15,7 @@ import com.example.mall.entity.OrderIdempotency;
 import com.example.mall.entity.OrderInfo;
 import com.example.mall.entity.OrderItem;
 import com.example.mall.entity.Product;
+import com.example.mall.entity.StockMovement;
 import com.example.mall.entity.User;
 import com.example.mall.exception.BusinessException;
 import com.example.mall.mapper.AddressMapper;
@@ -23,6 +24,7 @@ import com.example.mall.mapper.OrderIdempotencyMapper;
 import com.example.mall.mapper.OrderInfoMapper;
 import com.example.mall.mapper.OrderItemMapper;
 import com.example.mall.mapper.ProductMapper;
+import com.example.mall.mapper.StockMovementMapper;
 import com.example.mall.mapper.UserMapper;
 import com.example.mall.security.UserContext;
 import com.example.mall.service.OrderService;
@@ -57,12 +59,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
     private static final int STATUS_CANCELED = 4;
     private static final int IDEMPOTENCY_PROCESSING = 0;
     private static final int IDEMPOTENCY_SUCCEEDED = 1;
+    private static final String MOVEMENT_ORDER_DECREASE = "ORDER_DECREASE";
+    private static final String MOVEMENT_ORDER_CANCEL_RESTORE = "ORDER_CANCEL_RESTORE";
 
     private final AddressMapper addressMapper;
     private final CartItemMapper cartItemMapper;
     private final ProductMapper productMapper;
     private final OrderItemMapper orderItemMapper;
     private final OrderIdempotencyMapper orderIdempotencyMapper;
+    private final StockMovementMapper stockMovementMapper;
     private final UserMapper userMapper;
 
     @Override
@@ -136,10 +141,22 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         for (OrderItem item : orderItems) {
             item.setOrderId(order.getId());
             orderItemMapper.insert(item);
+            Product beforeProduct = productMap.get(item.getProductId());
             int affectedRows = productMapper.safeDecreaseStock(item.getProductId(), item.getQuantity());
             if (affectedRows == 0) {
                 throw new BusinessException("库存扣减失败：" + item.getProductName());
             }
+            Product afterProduct = productMapper.selectById(item.getProductId());
+            recordStockMovement(
+                    item.getProductId(),
+                    order.getId(),
+                    MOVEMENT_ORDER_DECREASE,
+                    item.getQuantity(),
+                    beforeProduct == null ? null : beforeProduct.getStock(),
+                    afterProduct == null ? null : afterProduct.getStock(),
+                    userId,
+                    "下单扣减库存"
+            );
         }
 
         int markedRows = orderIdempotencyMapper.markSucceeded(userId, requestId, order.getId());
@@ -315,11 +332,24 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
     private void restoreStockAndSales(Long orderId) {
         List<OrderItem> items = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
                 .eq(OrderItem::getOrderId, orderId));
+        Long operatorId = UserContext.userId();
         for (OrderItem item : items) {
+            Product beforeProduct = productMapper.selectById(item.getProductId());
             int affectedRows = productMapper.restoreStockFromCanceledOrder(item.getProductId(), item.getQuantity());
             if (affectedRows == 0) {
                 throw new BusinessException("库存恢复失败：" + item.getProductName());
             }
+            Product afterProduct = productMapper.selectById(item.getProductId());
+            recordStockMovement(
+                    item.getProductId(),
+                    orderId,
+                    MOVEMENT_ORDER_CANCEL_RESTORE,
+                    item.getQuantity(),
+                    beforeProduct == null ? null : beforeProduct.getStock(),
+                    afterProduct == null ? null : afterProduct.getStock(),
+                    operatorId,
+                    "取消待支付订单恢复库存"
+            );
         }
     }
 
@@ -354,6 +384,26 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
 
     private OrderCreateResultVO toOrderCreateResult(OrderInfo order) {
         return new OrderCreateResultVO(order.getId(), order.getOrderNo(), order.getTotalAmount());
+    }
+
+    private void recordStockMovement(Long productId,
+                                     Long orderId,
+                                     String movementType,
+                                     Integer quantity,
+                                     Integer beforeStock,
+                                     Integer afterStock,
+                                     Long operatorId,
+                                     String remark) {
+        StockMovement movement = new StockMovement();
+        movement.setProductId(productId);
+        movement.setOrderId(orderId);
+        movement.setMovementType(movementType);
+        movement.setQuantity(quantity);
+        movement.setBeforeStock(beforeStock);
+        movement.setAfterStock(afterStock);
+        movement.setOperatorId(operatorId);
+        movement.setRemark(remark);
+        stockMovementMapper.insert(movement);
     }
 
     private String normalizeText(String value) {

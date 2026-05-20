@@ -119,6 +119,7 @@ Content-Type: application/json
 # - order_item 新增商品快照
 # - product.stock 扣减，product.sales 增加
 # - cart_item 中对应购物车项被清理
+# - stock_movement 新增 ORDER_DECREASE 流水
 POST {{baseUrl}}/orders
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
@@ -225,6 +226,7 @@ Content-Type: application/json
 > {% client.global.set("cancelOrderId", response.body.data.orderId); %}
 
 ### 24. 用户取消待支付订单，预期释放库存并回退销量
+# 数据库观察点：stock_movement 新增 ORDER_CANCEL_RESTORE 流水
 PUT {{baseUrl}}/orders/{{cancelOrderId}}/cancel
 Authorization: Bearer {{userToken}}
 

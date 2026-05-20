@@ -116,6 +116,26 @@ CREATE TABLE order_info (
     CONSTRAINT ck_order_status CHECK (status IN (0, 1, 2, 3, 4))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单主表';
 
+CREATE TABLE stock_movement (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    product_id BIGINT NOT NULL,
+    order_id BIGINT,
+    movement_type VARCHAR(32) NOT NULL,
+    quantity INT NOT NULL,
+    before_stock INT,
+    after_stock INT,
+    operator_id BIGINT,
+    remark VARCHAR(255),
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_stock_movement_product_time (product_id, create_time),
+    KEY idx_stock_movement_order (order_id),
+    KEY idx_stock_movement_operator (operator_id, create_time),
+    CONSTRAINT fk_stock_movement_product FOREIGN KEY (product_id) REFERENCES product(id),
+    CONSTRAINT fk_stock_movement_order FOREIGN KEY (order_id) REFERENCES order_info(id),
+    CONSTRAINT fk_stock_movement_operator FOREIGN KEY (operator_id) REFERENCES `user`(id),
+    CONSTRAINT ck_stock_movement_quantity CHECK (quantity > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='库存流水表';
+
 CREATE TABLE order_idempotency (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,

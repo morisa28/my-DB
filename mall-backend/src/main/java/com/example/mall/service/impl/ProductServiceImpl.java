@@ -8,9 +8,12 @@ import com.example.mall.dto.ProductQueryDTO;
 import com.example.mall.dto.ProductSaveDTO;
 import com.example.mall.entity.Category;
 import com.example.mall.entity.Product;
+import com.example.mall.entity.StockMovement;
 import com.example.mall.exception.BusinessException;
 import com.example.mall.mapper.CategoryMapper;
 import com.example.mall.mapper.ProductMapper;
+import com.example.mall.mapper.StockMovementMapper;
+import com.example.mall.security.UserContext;
 import com.example.mall.service.ProductService;
 import com.example.mall.utils.CopyUtils;
 import com.example.mall.vo.ProductVO;
@@ -20,11 +23,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
+    private static final String MOVEMENT_ADMIN_ADJUST = "ADMIN_ADJUST";
+
     private final CategoryMapper categoryMapper;
+    private final StockMovementMapper stockMovementMapper;
 
     @Override
     public PageResult<ProductVO> pageProducts(ProductQueryDTO query, boolean admin) {
@@ -71,6 +78,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
             throw new BusinessException("商品不存在");
         }
         ensureCategoryUsable(dto.getCategoryId());
+        Integer beforeStock = product.getStock();
         product.setName(dto.getName());
         product.setCategoryId(dto.getCategoryId());
         product.setPrice(dto.getPrice());
@@ -79,6 +87,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         product.setDescription(dto.getDescription());
         product.setStatus(dto.getStatus() == null ? product.getStatus() : dto.getStatus());
         updateById(product);
+        recordAdminStockAdjustment(product.getId(), beforeStock, product.getStock(), "管理员编辑商品库存");
         return toProductVO(product);
     }
 
@@ -114,8 +123,10 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         if (product == null) {
             throw new BusinessException("商品不存在");
         }
+        Integer beforeStock = product.getStock();
         product.setStock(stock);
         updateById(product);
+        recordAdminStockAdjustment(product.getId(), beforeStock, stock, "管理员手动调整库存");
     }
 
     private void ensureCategoryUsable(Long categoryId) {
@@ -130,5 +141,20 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         Category category = categoryMapper.selectById(product.getCategoryId());
         vo.setCategoryName(category == null ? null : category.getName());
         return vo;
+    }
+
+    private void recordAdminStockAdjustment(Long productId, Integer beforeStock, Integer afterStock, String remark) {
+        if (Objects.equals(beforeStock, afterStock)) {
+            return;
+        }
+        StockMovement movement = new StockMovement();
+        movement.setProductId(productId);
+        movement.setMovementType(MOVEMENT_ADMIN_ADJUST);
+        movement.setQuantity(Math.abs(afterStock - beforeStock));
+        movement.setBeforeStock(beforeStock);
+        movement.setAfterStock(afterStock);
+        movement.setOperatorId(UserContext.userId());
+        movement.setRemark(remark);
+        stockMovementMapper.insert(movement);
     }
 }

@@ -54,6 +54,7 @@ docker compose up -d --build
 ```text
 前端入口：http://localhost:8088
 后端健康检查：http://localhost:8088/api/health
+后端就绪检查：http://localhost:8088/api/ready
 MySQL：localhost:3307
 ```
 
@@ -72,6 +73,32 @@ docs/database-migration.md
 docs/deploy-server-precheck.md
 docs/ops-runbook.md
 ```
+
+## 生产模式部署
+
+`docker-compose.yml` 仅用于本地演示/开发，内置了 demo 数据库密码、demo JWT 密钥、开发 profile 和 MySQL 端口映射，不应直接用于公网服务器。
+
+生产或服务器内测请使用生产模板，并替换所有占位值：
+
+```bash
+cp .env.prod.example .env
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+生产 Compose 的安全约束：
+
+- 强制要求 `MYSQL_ROOT_PASSWORD`、`MYSQL_USER`、`MYSQL_PASSWORD`、`JWT_SECRET`、`CORS_ALLOWED_ORIGINS`。
+- 后端固定使用 `SPRING_PROFILES_ACTIVE=prod`。
+- 后端使用 `MYSQL_USER` 连接数据库，禁止使用 root 账号。
+- MySQL 不映射到宿主机端口，避免误暴露到公网。
+- 后端容器健康检查使用 `/api/ready`，必须能连接数据库才算就绪。
+
+后端在 prod profile 下会启动自检，发现以下危险配置会拒绝启动：
+
+- `JWT_SECRET` 为空、少于 32 字节、使用 demo 值或仍包含 `change-me`。
+- `CORS_ALLOWED_ORIGINS` 为空或包含 `*`。
+- `DB_USERNAME=root`。
+- `DB_PASSWORD` 为空、过短、使用 demo 值或仍包含 `change-me`。
 
 ## 启动后端
 
@@ -126,6 +153,7 @@ node scripts/practical-flow-check.mjs
 - 用户注册登录和 JWT 鉴权。
 - 禁用用户 Token 会被后端拒绝，生产环境禁止使用默认 JWT 密钥。
 - CORS 允许来源可通过 `CORS_ALLOWED_ORIGINS` 配置。
+- 生产环境启动会校验 JWT、CORS 和数据库账号密码，避免 demo 配置误上线。
 - 商品分页、搜索、分类筛选。
 - 管理员上传商品主图，图片保存到持久化上传目录并通过 `/uploads/**` 访问。
 - 管理后台支持低库存筛选和用户订单概要查看。
@@ -157,6 +185,7 @@ node scripts/practical-flow-check.mjs
 - `15-阶段九-测试和上线前验证.md`
 - `16-阶段十-服务器部署前交付包.md`
 - `17-整体隐患审查报告.md`
+- `18-阶段十一-生产安全与运行稳定性加固.md`
 - `deploy-demo.md`
 - `demo-script.md`
 - `database-migration.md`

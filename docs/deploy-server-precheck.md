@@ -11,8 +11,10 @@
 - MySQL 数据卷持久化。
 - 商品图片上传目录持久化。
 - `/api/health` 健康检查。
+- `/api/ready` 数据库就绪检查。
+- `docker-compose.prod.yml` 生产部署模板。
 - 线下付款备注、管理员确认收款、发货、用户确认收货和待支付订单取消。
-- JWT 鉴权、管理员接口权限、禁用用户拦截、生产环境默认 JWT 密钥拦截。
+- JWT 鉴权、管理员接口权限、禁用用户拦截、生产环境危险配置启动拦截。
 - 上线前业务验收脚本 `scripts/practical-flow-check.mjs`。
 
 未内置：
@@ -66,7 +68,7 @@ Compose 默认端口：
 |---:|---|---|---|
 | 8088 | `frontend` | 是，或由外层 Nginx/Caddy 反代 | 用户访问入口 |
 | 8080 | `backend` | 否 | 后端直连调试端口，公网部署建议只允许本机或内网访问 |
-| 3307 | `mysql` | 否 | MySQL 映射端口，公网必须关闭 |
+| 3307 | `mysql` | 否 | 仅本地演示 Compose 默认映射；生产 Compose 不映射 MySQL |
 | 80 | 外层反代 | 是 | 如用户使用服务器级 Nginx/Caddy |
 | 443 | 外层反代 | 是 | HTTPS 入口，由用户配置证书 |
 
@@ -78,25 +80,28 @@ Compose 默认端口：
 
 ## 5. `.env` 必填项
 
-从模板复制：
+本地演示从模板复制：
 
 ```bash
 cp .env.example .env
 ```
 
-生产部署必须修改：
+生产部署应使用生产模板：
+
+```bash
+cp .env.prod.example .env
+```
+
+生产部署必须替换所有 `change-me` 占位值：
 
 ```text
 MYSQL_ROOT_PASSWORD=替换为强密码
 MYSQL_DATABASE=mall_db
-MYSQL_PORT=3307
-DB_USERNAME=root
-DB_PASSWORD=必须与 MYSQL_ROOT_PASSWORD 保持一致，除非创建了独立数据库用户
+MYSQL_USER=mall_app
+MYSQL_PASSWORD=替换为应用数据库用户强密码
 
-BACKEND_PORT=8080
 FRONTEND_PORT=8088
 
-SPRING_PROFILES_ACTIVE=prod
 JWT_SECRET=替换为至少32字节的强随机密钥
 JWT_EXPIRATION_MINUTES=10080
 CORS_ALLOWED_ORIGINS=https://你的域名
@@ -111,8 +116,8 @@ UPLOAD_MAX_SIZE_BYTES=2097152
 注意：
 
 - `.env` 已被 `.gitignore` 忽略，不要提交到 Git。
-- `SPRING_PROFILES_ACTIVE=prod` 时，`DB_URL`、`DB_USERNAME`、`DB_PASSWORD`、`JWT_SECRET`、`CORS_ALLOWED_ORIGINS` 必须通过环境变量有效提供。
-- `JWT_SECRET` 不能使用 `.env.example` 中的演示值。
+- 生产 Compose 固定 `SPRING_PROFILES_ACTIVE=prod`，后端使用 `MYSQL_USER` 和 `MYSQL_PASSWORD` 连接数据库。
+- 生产环境后端禁止 root 数据库账号、demo JWT 密钥和 `CORS_ALLOWED_ORIGINS=*`。
 - 如果外层反代使用 HTTPS，`CORS_ALLOWED_ORIGINS` 应填写 HTTPS 域名。
 - 若存在多个前端域名，用逗号分隔，例如 `https://example.com,https://www.example.com`。
 
@@ -146,25 +151,32 @@ mkdir -p /data/mall/uploads
 
 ## 7. 数据库初始化
 
-首次启动时，MySQL 数据卷为空，Compose 会自动执行：
+首次启动时，MySQL 数据卷为空，Compose 会自动执行内置在 `mall-platform-mysql` 镜像中的初始化 SQL：
 
 ```text
 mall-backend/src/main/resources/sql/schema.sql
 mall-backend/src/main/resources/sql/data.sql
 ```
 
-启动：
+本地演示启动：
 
 ```bash
 docker compose up -d --build
 docker compose ps
 ```
 
+生产部署启动：
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml ps
+```
+
 检查：
 
 ```bash
 curl http://localhost:8088/api/health
-curl http://localhost:8080/api/health
+curl http://localhost:8088/api/ready
 ```
 
 已有数据库升级时不要执行：
@@ -209,6 +221,7 @@ docker compose down
 docker compose up -d --build
 docker compose ps
 curl http://localhost:8088/api/health
+curl http://localhost:8088/api/ready
 node scripts/practical-flow-check.mjs
 ```
 
@@ -216,6 +229,7 @@ node scripts/practical-flow-check.mjs
 
 - 三个容器运行正常。
 - `/api/health` 返回 `UP`。
+- `/api/ready` 返回 `UP` 且 `database=UP`。
 - 默认管理员可登录。
 - 普通用户可下单、提交付款备注、取消待支付订单。
 - 管理员可确认收款、发货、上传商品图片。
@@ -233,7 +247,7 @@ node scripts/practical-flow-check.mjs
 - 配置服务器防火墙和云厂商安全组。
 - 准备域名或决定使用公网 IP。
 - 配置 HTTPS 证书和外层反向代理。
-- 修改 `.env` 中所有演示密码和演示密钥。
+- 修改 `.env` 中所有生产模板占位密码和密钥。
 - 修改默认管理员密码。
 - 准备正式商品资料、分类、库存、价格和图片。
 - 决定是否继续使用同机 MySQL，或迁移到云数据库。
@@ -256,9 +270,10 @@ node scripts/practical-flow-check.mjs
 上线前逐项确认：
 
 - [ ] `.env` 已创建且未提交 Git。
-- [ ] `SPRING_PROFILES_ACTIVE=prod`。
+- [ ] 使用 `docker-compose.prod.yml` 启动，后端 profile 为 `prod`。
 - [ ] `JWT_SECRET` 已替换为强随机密钥。
-- [ ] `MYSQL_ROOT_PASSWORD` 和 `DB_PASSWORD` 已替换为强密码。
+- [ ] `MYSQL_ROOT_PASSWORD` 和 `MYSQL_PASSWORD` 已替换为强密码。
+- [ ] `MYSQL_USER` 不是 `root`。
 - [ ] `CORS_ALLOWED_ORIGINS` 已设置为正式域名。
 - [ ] 公网未开放 MySQL 端口。
 - [ ] 上传目录卷或绑定挂载已确认可持久化。

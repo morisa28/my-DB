@@ -2,6 +2,8 @@ package com.example.mall.exception;
 
 import com.example.mall.common.Result;
 import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -14,6 +16,7 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Result<Void>> handleBusinessException(BusinessException e) {
@@ -48,7 +51,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Result<Void>> handleException(Exception e) {
-        return error(500, "系统错误：" + e.getMessage());
+        log.error("Unhandled server exception", e);
+        return error(500, "系统暂时不可用，请稍后重试");
     }
 
     private ResponseEntity<Result<Void>> error(Integer code, String message) {

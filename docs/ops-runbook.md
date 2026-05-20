@@ -63,20 +63,25 @@ docker compose down -v
 
 ```bash
 curl http://localhost:8088/api/health
+curl http://localhost:8088/api/ready
 curl http://localhost:8080/api/health
+curl http://localhost:8080/api/ready
 ```
 
 从外网检查：
 
 ```bash
 curl https://你的域名/api/health
+curl https://你的域名/api/ready
 ```
 
-正常结果应包含：
+`/api/health` 只代表后端进程存活，正常结果应包含：
 
 ```text
 UP
 ```
+
+`/api/ready` 会检查数据库连接，正常结果应包含 `status=UP` 和 `database=UP`。如果 `/api/health` 正常但 `/api/ready` 返回 503，优先排查 MySQL 容器、数据库账号密码和网络连通性。
 
 如果外网失败、本机成功，优先检查安全组、服务器防火墙、HTTPS 证书和外层反向代理。
 
@@ -185,6 +190,7 @@ docker compose up -d
 
 ```bash
 curl http://localhost:8088/api/health
+curl http://localhost:8088/api/ready
 ```
 
 ## 8. 更新发布流程
@@ -214,6 +220,7 @@ docker compose up -d --build
 ```bash
 docker compose ps
 curl http://localhost:8088/api/health
+curl http://localhost:8088/api/ready
 ```
 
 7. 执行业务验收：
@@ -276,6 +283,7 @@ docker compose logs --tail=100 frontend
 
 ```bash
 curl http://localhost:8088/api/health
+curl http://localhost:8088/api/ready
 docker compose logs --tail=200 backend
 ```
 

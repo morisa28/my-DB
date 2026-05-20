@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Backend test
+        working-directory: mall-backend
+        run: mvn -B test
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: mall-frontend/package-lock.json
+      - name: Frontend install
+        working-directory: mall-frontend
+        run: npm ci
+      - name: Frontend build
+        working-directory: mall-frontend
+        run: npm run build
+
+  compose-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Demo compose config check
+        run: docker compose config --quiet
+      - name: Production compose config check
+        run: docker compose -f docker-compose.prod.yml --env-file .env.prod.example config --quiet

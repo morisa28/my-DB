@@ -40,6 +40,7 @@ docker compose ps
 ```text
 前端入口：http://localhost:8088
 后端健康检查：http://localhost:8088/api/health
+后端就绪检查：http://localhost:8088/api/ready
 后端直连：http://localhost:8080/api/health
 MySQL：localhost:3307
 ```
@@ -94,15 +95,17 @@ docker compose ps
 
 ```bash
 curl http://localhost:8080/api/health
+curl http://localhost:8080/api/ready
 ```
 
 检查前端代理：
 
 ```bash
 curl http://localhost:8088/api/health
+curl http://localhost:8088/api/ready
 ```
 
-如果两个接口都返回 `status=UP`，说明前端代理和后端都可用。
+如果 `/api/health` 返回 `status=UP`，说明后端进程可响应；如果 `/api/ready` 也返回 `status=UP` 且 `database=UP`，说明数据库依赖也可用。
 
 ## 5. 数据库连接
 
@@ -194,6 +197,7 @@ docker compose up -d --build
 docker compose logs backend
 docker compose logs frontend
 curl http://localhost:8088/api/health
+curl http://localhost:8088/api/ready
 ```
 
 重点确认后端是否连接上 MySQL，以及 Nginx 是否把 `/api` 代理到 `backend:8080`。

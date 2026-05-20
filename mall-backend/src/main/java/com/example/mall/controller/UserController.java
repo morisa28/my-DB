@@ -33,6 +33,12 @@ public class UserController {
         return Result.ok(userService.login(dto));
     }
 
+    @PostMapping("/logout")
+    public Result<Void> logout() {
+        userService.logout();
+        return Result.ok();
+    }
+
     @GetMapping("/info")
     public Result<UserVO> info() {
         return Result.ok(userService.currentUser());
@@ -49,4 +55,3 @@ public class UserController {
         return Result.ok();
     }
 }
-

@@ -12,11 +12,15 @@ CREATE TABLE `user` (
     email VARCHAR(100),
     role TINYINT NOT NULL DEFAULT 0 COMMENT '0 普通用户，1 管理员',
     status TINYINT NOT NULL DEFAULT 1 COMMENT '0 禁用，1 正常',
+    session_version INT NOT NULL DEFAULT 0 COMMENT '会话版本，变更后旧 Token 失效',
+    last_login_time DATETIME,
+    last_password_update_time DATETIME,
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_user_username (username),
     CONSTRAINT ck_user_role CHECK (role IN (0, 1)),
-    CONSTRAINT ck_user_status CHECK (status IN (0, 1))
+    CONSTRAINT ck_user_status CHECK (status IN (0, 1)),
+    CONSTRAINT ck_user_session_version CHECK (session_version >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 CREATE TABLE category (

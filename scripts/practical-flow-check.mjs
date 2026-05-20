@@ -54,6 +54,35 @@ async function uploadImage(adminToken) {
 
 const health = await request('GET', '/health')
 assert(health.body.data.status === 'UP', '健康检查失败')
+const ready = await request('GET', '/ready')
+assert(ready.body.data.status === 'UP' && ready.body.data.database === 'UP', '数据库就绪检查失败')
+
+const limitedUsername = `login_limit_${Date.now()}`
+for (let i = 0; i < 5; i += 1) {
+  const failed = await request('POST', '/user/login', { username: limitedUsername, password: 'bad-password' }, null, false)
+  assert(failed.http === 401, '错误密码登录应返回 401')
+}
+const limited = await request('POST', '/user/login', { username: limitedUsername, password: 'bad-password' }, null, false)
+assert(limited.http === 429, '连续登录失败后应触发限流')
+
+const securityUsername = `secure_user_${Date.now()}`
+await request('POST', '/user/register', {
+  username: securityUsername,
+  password: 'Secure12345!',
+  phone: '13600000003',
+  email: `${securityUsername}@example.com`
+})
+const securityToken = await login(securityUsername, 'Secure12345!')
+await request('PUT', '/user/password', {
+  oldPassword: 'Secure12345!',
+  newPassword: 'NewSecure12345!'
+}, securityToken)
+const oldPasswordToken = await request('GET', '/cart', null, securityToken, false)
+assert(oldPasswordToken.http === 401, '修改密码后旧 Token 应返回 401')
+const securityTokenAfterPassword = await login(securityUsername, 'NewSecure12345!')
+await request('POST', '/user/logout', null, securityTokenAfterPassword)
+const logoutToken = await request('GET', '/cart', null, securityTokenAfterPassword, false)
+assert(logoutToken.http === 401, '退出登录后旧 Token 应返回 401')
 
 const userToken = await login('user', 'user123456')
 const adminToken = await login('admin', 'admin123456')
@@ -125,6 +154,7 @@ console.log(JSON.stringify({
   orderId,
   cancelOrderId,
   imageUrl,
+  securityUsername,
   lowStockCount: lowStock.body.data.records.length,
   userTotalOrders: summary.body.data.totalOrders,
   checks: 'passed'

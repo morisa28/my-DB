@@ -138,7 +138,7 @@ npm run dev
 mall-backend/api-test.http
 ```
 
-该文件包含注册、登录、分类、商品、购物车、地址、下单、付款备注、管理员确认收款、发货、确认收货、取消订单和统计接口示例。
+该文件包含注册、登录、登录失败限流、主动退出、分类、商品、购物车、地址、下单、付款备注、管理员确认收款、发货、确认收货、取消订单和统计接口示例。
 
 上线前业务验收脚本：
 
@@ -151,6 +151,8 @@ node scripts/practical-flow-check.mjs
 ## 重点展示功能
 
 - 用户注册登录和 JWT 鉴权。
+- JWT 内含会话版本，修改密码、主动退出登录或管理员禁用用户后旧 Token 会失效。
+- 登录失败有基础内存限流，注册和修改密码要求至少 8 位且包含字母和数字。
 - 禁用用户 Token 会被后端拒绝，生产环境禁止使用默认 JWT 密钥。
 - CORS 允许来源可通过 `CORS_ALLOWED_ORIGINS` 配置。
 - 生产环境启动会校验 JWT、CORS 和数据库账号密码，避免 demo 配置误上线。
@@ -186,6 +188,7 @@ node scripts/practical-flow-check.mjs
 - `16-阶段十-服务器部署前交付包.md`
 - `17-整体隐患审查报告.md`
 - `18-阶段十一-生产安全与运行稳定性加固.md`
+- `19-阶段十二-登录会话安全加固.md`
 - `deploy-demo.md`
 - `demo-script.md`
 - `database-migration.md`

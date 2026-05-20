@@ -45,8 +45,8 @@ onMounted(() => {
   if (auth.isLogin) cart.refreshCount()
 })
 
-function logout() {
-  auth.logout()
+async function logout() {
+  await auth.logout()
   cart.count = 0
   router.push('/')
 }
@@ -118,4 +118,3 @@ main {
   }
 }
 </style>
-

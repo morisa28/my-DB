@@ -19,6 +19,9 @@ public class User {
     private String email;
     private Integer role;
     private Integer status;
+    private Integer sessionVersion;
+    private LocalDateTime lastLoginTime;
+    private LocalDateTime lastPasswordUpdateTime;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
@@ -26,4 +29,3 @@ public class User {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 }
-

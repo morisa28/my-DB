@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getUserInfo, login as loginApi } from '../api/user'
+import { getUserInfo, login as loginApi, logout as logoutApi } from '../api/user'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -25,7 +25,14 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('user', JSON.stringify(this.user))
       return this.user
     },
-    logout() {
+    async logout(remote = true) {
+      if (remote && this.token) {
+        try {
+          await logoutApi()
+        } catch {
+          // 本地退出必须可靠，远端失效失败时仍清理浏览器状态。
+        }
+      }
       this.token = ''
       this.user = null
       localStorage.removeItem('token')
@@ -33,4 +40,3 @@ export const useAuthStore = defineStore('auth', {
     }
   }
 })
-

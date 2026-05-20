@@ -22,6 +22,8 @@ public interface UserService extends IService<User> {
 
     void updatePassword(PasswordUpdateDTO dto);
 
+    void logout();
+
     PageResult<UserVO> pageUsers(Long page, Long size, String keyword);
 
     void updateUserStatus(Long id, Integer status);

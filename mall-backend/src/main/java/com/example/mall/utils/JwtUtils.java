@@ -21,13 +21,14 @@ public class JwtUtils {
     @Value("${mall.jwt.expiration-minutes}")
     private Long expirationMinutes;
 
-    public String generateToken(Long userId, String username, Integer role) {
+    public String generateToken(Long userId, String username, Integer role, Integer sessionVersion) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + expirationMinutes * 60 * 1000);
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("username", username)
                 .claim("role", role)
+                .claim("sessionVersion", sessionVersion == null ? 0 : sessionVersion)
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(key())
@@ -44,7 +45,8 @@ public class JwtUtils {
             Long userId = Long.valueOf(claims.getSubject());
             String username = claims.get("username", String.class);
             Integer role = claims.get("role", Integer.class);
-            return new LoginUser(userId, username, role);
+            Integer sessionVersion = claims.get("sessionVersion", Integer.class);
+            return new LoginUser(userId, username, role, sessionVersion == null ? 0 : sessionVersion);
         } catch (JwtException | IllegalArgumentException e) {
             throw new BusinessException(401, "Token 无效或已过期");
         }
@@ -58,4 +60,3 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(bytes);
     }
 }
-

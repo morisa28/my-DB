@@ -32,8 +32,8 @@ import { useAuthStore } from '../store/auth'
 const router = useRouter()
 const auth = useAuthStore()
 
-function logout() {
-  auth.logout()
+async function logout() {
+  await auth.logout()
   router.push('/login')
 }
 </script>
@@ -101,4 +101,3 @@ function logout() {
   }
 }
 </style>
-

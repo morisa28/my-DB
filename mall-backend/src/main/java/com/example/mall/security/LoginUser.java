@@ -11,5 +11,5 @@ public class LoginUser {
     private Long id;
     private String username;
     private Integer role;
+    private Integer sessionVersion;
 }
-

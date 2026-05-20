@@ -36,8 +36,12 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         if (!Integer.valueOf(1).equals(user.getStatus())) {
             throw new BusinessException(403, "用户已被禁用");
         }
+        Integer currentSessionVersion = user.getSessionVersion() == null ? 0 : user.getSessionVersion();
+        if (!currentSessionVersion.equals(loginUser.getSessionVersion())) {
+            throw new BusinessException(401, "登录已失效，请重新登录");
+        }
 
-        LoginUser current = new LoginUser(user.getId(), user.getUsername(), user.getRole());
+        LoginUser current = new LoginUser(user.getId(), user.getUsername(), user.getRole(), currentSessionVersion);
         UserContext.set(current);
 
         boolean adminPath = request.getRequestURI().startsWith(request.getContextPath() + "/api/admin");
@@ -57,4 +61,3 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         UserContext.clear();
     }
 }
-

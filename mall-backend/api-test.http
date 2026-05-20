@@ -15,6 +15,9 @@ GET {{baseUrl}}/health
 ### 0.1 后端直连健康检查
 GET {{backendUrl}}/health
 
+### 0.2 前端代理就绪检查，需数据库可用
+GET {{baseUrl}}/ready
+
 ### 1. 普通用户登录，明文密码 user123456
 POST {{baseUrl}}/user/login
 Content-Type: application/json
@@ -44,6 +47,15 @@ Content-Type: application/json
 {
   "username": "disabled_demo",
   "password": "user123456"
+}
+
+### 3.1 连续登录失败限流示例，多次执行后预期返回 429
+POST {{baseUrl}}/user/login
+Content-Type: application/json
+
+{
+  "username": "login_limit_demo",
+  "password": "bad-password"
 }
 
 ### 4. 游客查询分类
@@ -257,3 +269,7 @@ Content-Type: application/json
   "productId": 11,
   "quantity": 999
 }
+
+### 33. 用户主动退出登录，当前 Token 版本失效
+POST {{baseUrl}}/user/logout
+Authorization: Bearer {{userToken}}

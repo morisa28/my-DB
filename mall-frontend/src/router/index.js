@@ -44,7 +44,7 @@ router.beforeEach(async (to) => {
     try {
       await auth.fetchUser()
     } catch {
-      auth.logout()
+      auth.logout(false)
     }
   }
   if (to.meta.requiresAuth && !auth.isLogin) {
@@ -58,4 +58,3 @@ router.beforeEach(async (to) => {
 })
 
 export default router
-

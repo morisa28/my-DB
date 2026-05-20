@@ -49,11 +49,21 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
+生产部署前应使用生产模板创建 `.env`，并优先使用生产 Compose：
+
+```bash
+cp .env.prod.example .env
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+生产模板包含 `COMPOSE_PROJECT_NAME=mall-platform`，用于固定服务器上的 Compose 资源前缀。Compose 不再固定 `container_name`，因此本地多个 worktree 可用不同端口并行验收。
+
 访问地址：
 
 ```text
 前端入口：http://localhost:8088
 后端健康检查：http://localhost:8088/api/health
+后端就绪检查：http://localhost:8088/api/ready
 MySQL：localhost:3307
 ```
 
@@ -71,6 +81,9 @@ docs/deploy-demo.md
 docs/database-migration.md
 docs/deploy-server-precheck.md
 docs/ops-runbook.md
+docs/17-整体隐患审查报告.md
+docs/21-阶段十四-测试审计与前端分包优化.md
+docs/22-阶段十五-后台操作审计与迁移追踪.md
 ```
 
 ## 启动后端
@@ -111,7 +124,7 @@ npm run dev
 mall-backend/api-test.http
 ```
 
-该文件包含注册、登录、分类、商品、购物车、地址、下单、付款备注、管理员确认收款、发货、确认收货、取消订单和统计接口示例。
+该文件包含注册、登录、分类、商品、购物车、地址、下单、付款备注、管理员确认收款、发货、确认收货、取消订单、订单审计日志、后台操作日志和统计接口示例。
 
 上线前业务验收脚本：
 
@@ -133,6 +146,8 @@ node scripts/practical-flow-check.mjs
 - 地址默认值互斥。
 - 订单创建事务：订单主表、订单明细、库存扣减、销量增加、购物车清理同事务完成。
 - 实用级订单流程：用户提交付款备注，管理员确认收款并发货，用户确认收货；取消待支付订单会恢复库存并回退销量。
+- 订单操作审计日志：记录创建订单、付款备注、确认收款、发货、取消和确认收货。
+- 后台操作审计日志：记录商品、分类和用户状态等管理动作，并可在后台查询。
 - 订单明细保存商品名称、价格、图片快照。
 - 管理员后台管理商品、分类、订单、用户和统计数据。
 
@@ -157,6 +172,11 @@ node scripts/practical-flow-check.mjs
 - `15-阶段九-测试和上线前验证.md`
 - `16-阶段十-服务器部署前交付包.md`
 - `17-整体隐患审查报告.md`
+- `18-阶段十一-第一批隐患修复.md`
+- `19-阶段十二-订单并发幂等修复.md`
+- `20-阶段十三-Docker运行态复验与Compose隔离修复.md`
+- `21-阶段十四-测试审计与前端分包优化.md`
+- `22-阶段十五-后台操作审计与迁移追踪.md`
 - `deploy-demo.md`
 - `demo-script.md`
 - `database-migration.md`

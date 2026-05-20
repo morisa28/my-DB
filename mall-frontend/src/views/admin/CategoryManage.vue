@@ -32,7 +32,8 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus/es/components/message/index.mjs'
+import { ElMessageBox } from 'element-plus/es/components/message-box/index.mjs'
 import { createCategory, deleteCategory, getAdminCategories, updateCategory } from '../../api/product'
 
 const categories = ref([])
@@ -71,4 +72,3 @@ onMounted(load)
   gap: 18px;
 }
 </style>
-

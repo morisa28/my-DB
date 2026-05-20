@@ -15,7 +15,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from 'element-plus/es/components/message/index.mjs'
 import { useAuthStore } from '../../store/auth'
 import { useCartStore } from '../../store/cart'
 
@@ -76,4 +76,3 @@ a {
   font-weight: 700;
 }
 </style>
-

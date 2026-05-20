@@ -11,6 +11,7 @@ import com.example.mall.entity.Product;
 import com.example.mall.exception.BusinessException;
 import com.example.mall.mapper.CategoryMapper;
 import com.example.mall.mapper.ProductMapper;
+import com.example.mall.service.AdminOperationLogService;
 import com.example.mall.service.ProductService;
 import com.example.mall.utils.CopyUtils;
 import com.example.mall.vo.ProductVO;
@@ -24,7 +25,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
+    private static final String MODULE_PRODUCT = "PRODUCT";
+
     private final CategoryMapper categoryMapper;
+    private final AdminOperationLogService adminOperationLogService;
 
     @Override
     public PageResult<ProductVO> pageProducts(ProductQueryDTO query, boolean admin) {
@@ -60,6 +64,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         product.setSales(0);
         product.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
         save(product);
+        adminOperationLogService.record(MODULE_PRODUCT, "CREATE_PRODUCT", product.getId(), product.getName(), "创建商品");
         return toProductVO(product);
     }
 
@@ -79,6 +84,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         product.setDescription(dto.getDescription());
         product.setStatus(dto.getStatus() == null ? product.getStatus() : dto.getStatus());
         updateById(product);
+        adminOperationLogService.record(MODULE_PRODUCT, "UPDATE_PRODUCT", product.getId(), product.getName(), "更新商品资料");
         return toProductVO(product);
     }
 
@@ -91,6 +97,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         }
         product.setStatus(0);
         updateById(product);
+        adminOperationLogService.record(MODULE_PRODUCT, "DISABLE_PRODUCT", product.getId(), product.getName(), "下架商品");
     }
 
     @Override
@@ -105,6 +112,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         }
         product.setStatus(status);
         updateById(product);
+        adminOperationLogService.record(MODULE_PRODUCT, "UPDATE_PRODUCT_STATUS", product.getId(), product.getName(), "状态更新为 " + status);
     }
 
     @Override
@@ -116,6 +124,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         }
         product.setStock(stock);
         updateById(product);
+        adminOperationLogService.record(MODULE_PRODUCT, "UPDATE_PRODUCT_STOCK", product.getId(), product.getName(), "库存更新为 " + stock);
     }
 
     private void ensureCategoryUsable(Long categoryId) {

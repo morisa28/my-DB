@@ -54,6 +54,8 @@ async function uploadImage(adminToken) {
 
 const health = await request('GET', '/health')
 assert(health.body.data.status === 'UP', '健康检查失败')
+const ready = await request('GET', '/ready')
+assert(ready.body.data.status === 'UP' && ready.body.data.database === 'UP', '数据库就绪检查失败')
 
 const userToken = await login('user', 'user123456')
 const adminToken = await login('admin', 'admin123456')
@@ -89,13 +91,24 @@ let cart = (await request('GET', '/cart', null, userToken)).body.data
 let cartItem = cart.find((item) => item.productId === 3)
 const order = await request('POST', '/orders', { addressId, cartItemIds: [cartItem.id] }, userToken)
 const orderId = order.body.data.orderId
+const duplicateOrder = await request('POST', '/orders', { addressId, cartItemIds: [cartItem.id] }, userToken, false)
+assert(duplicateOrder.http === 400, '重复结算同一购物车项应返回 400')
 
 await request('PUT', `/orders/${orderId}/payment-note`, { paymentNote: '上线前验收付款备注' }, userToken)
 await request('POST', `/admin/orders/${orderId}/confirm-payment`, { adminRemark: '上线前验收已收款' }, adminToken)
+const latePaymentNote = await request('PUT', `/orders/${orderId}/payment-note`, { paymentNote: '迟到备注' }, userToken, false)
+assert(latePaymentNote.http === 400, '确认收款后继续提交付款备注应返回 400')
 await request('PUT', `/admin/orders/${orderId}/ship`, { shippingNo: `CHECK${Date.now()}` }, adminToken)
 await request('PUT', `/orders/${orderId}/confirm-receipt`, null, userToken)
+const duplicateReceipt = await request('PUT', `/orders/${orderId}/confirm-receipt`, null, userToken, false)
+assert(duplicateReceipt.http === 400, '重复确认收货应返回 400')
 const finished = (await request('GET', `/orders/${orderId}`, null, userToken)).body.data
 assert(finished.status === 3 && finished.confirmTime, '订单确认收货失败')
+const operationLogs = (await request('GET', `/admin/orders/${orderId}/logs`, null, adminToken)).body.data || []
+const actions = new Set(operationLogs.map((item) => item.action))
+for (const action of ['CREATE_ORDER', 'SUBMIT_PAYMENT_NOTE', 'CONFIRM_PAYMENT', 'SHIP_ORDER', 'CONFIRM_RECEIPT']) {
+  assert(actions.has(action), `订单操作日志缺少 ${action}`)
+}
 
 const productBefore = (await request('GET', '/products/4')).body.data
 await request('POST', '/cart', { productId: 4, quantity: 1 }, userToken)
@@ -104,12 +117,18 @@ cartItem = cart.find((item) => item.productId === 4)
 const cancelOrder = await request('POST', '/orders', { addressId, cartItemIds: [cartItem.id] }, userToken)
 const cancelOrderId = cancelOrder.body.data.orderId
 await request('PUT', `/orders/${cancelOrderId}/cancel`, null, userToken)
+const duplicateCancel = await request('PUT', `/orders/${cancelOrderId}/cancel`, null, userToken, false)
+assert(duplicateCancel.http === 400, '重复取消订单应返回 400')
 const canceled = (await request('GET', `/orders/${cancelOrderId}`, null, userToken)).body.data
 const productAfter = (await request('GET', '/products/4')).body.data
 assert(canceled.status === 4 && canceled.cancelTime, '取消订单状态异常')
 assert(productAfter.stock === productBefore.stock && productAfter.sales === productBefore.sales, '取消订单未恢复库存或销量')
+const cancelLogs = (await request('GET', `/admin/orders/${cancelOrderId}/logs`, null, adminToken)).body.data || []
+assert(cancelLogs.some((item) => item.action === 'CANCEL_ORDER'), '取消订单未写入操作日志')
 
 await request('PUT', '/admin/users/3/status', { status: 0 }, adminToken)
+const adminOperationLogs = (await request('GET', '/admin/operation-logs?module=USER&action=UPDATE_USER_STATUS', null, adminToken)).body.data.records || []
+assert(adminOperationLogs.some((item) => item.targetId === 3), '用户状态变更未写入后台操作日志')
 const disabledToken = await request('GET', '/cart', null, aliceToken, false)
 assert(disabledToken.http === 403, '禁用用户旧 Token 应返回 403')
 await request('PUT', '/admin/users/3/status', { status: 1 }, adminToken)
@@ -126,6 +145,8 @@ console.log(JSON.stringify({
   cancelOrderId,
   imageUrl,
   lowStockCount: lowStock.body.data.records.length,
+  operationLogCount: operationLogs.length,
+  adminOperationLogCount: adminOperationLogs.length,
   userTotalOrders: summary.body.data.totalOrders,
   checks: 'passed'
 }, null, 2))

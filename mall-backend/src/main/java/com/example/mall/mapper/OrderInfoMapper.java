@@ -3,9 +3,12 @@ package com.example.mall.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.example.mall.entity.OrderInfo;
 import com.example.mall.vo.UserOrderSummaryVO;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public interface OrderInfoMapper extends BaseMapper<OrderInfo> {
 
@@ -32,4 +35,72 @@ public interface OrderInfoMapper extends BaseMapper<OrderInfo> {
             WHERE user_id = #{userId}
             """)
     UserOrderSummaryVO selectUserOrderSummary(Long userId);
+
+    @Update("""
+            UPDATE order_info
+            SET payment_note = #{paymentNote},
+                update_time = CURRENT_TIMESTAMP
+            WHERE id = #{id}
+              AND user_id = #{userId}
+              AND status = 0
+            """)
+    int updatePaymentNoteIfWaiting(@Param("id") Long id,
+                                   @Param("userId") Long userId,
+                                   @Param("paymentNote") String paymentNote);
+
+    @Update("""
+            UPDATE order_info
+            SET status = 1,
+                pay_time = #{payTime},
+                admin_remark = #{adminRemark},
+                update_time = CURRENT_TIMESTAMP
+            WHERE id = #{id}
+              AND status = 0
+            """)
+    int confirmPaymentIfWaiting(@Param("id") Long id,
+                                @Param("payTime") LocalDateTime payTime,
+                                @Param("adminRemark") String adminRemark);
+
+    @Update("""
+            UPDATE order_info
+            SET status = 4,
+                cancel_time = #{cancelTime},
+                update_time = CURRENT_TIMESTAMP
+            WHERE id = #{id}
+              AND user_id = #{userId}
+              AND status = 0
+            """)
+    int cancelIfWaitingPayment(@Param("id") Long id,
+                               @Param("userId") Long userId,
+                               @Param("cancelTime") LocalDateTime cancelTime);
+
+    @Update("""
+            UPDATE order_info
+            SET status = 2,
+                shipping_no = #{shippingNo},
+                admin_remark = #{adminRemark},
+                ship_time = #{shipTime},
+                update_time = CURRENT_TIMESTAMP
+            WHERE id = #{id}
+              AND status = 1
+            """)
+    int shipIfWaitingShipment(@Param("id") Long id,
+                              @Param("shippingNo") String shippingNo,
+                              @Param("adminRemark") String adminRemark,
+                              @Param("shipTime") LocalDateTime shipTime);
+
+    @Update("""
+            UPDATE order_info
+            SET status = 3,
+                finish_time = #{finishTime},
+                confirm_time = #{confirmTime},
+                update_time = CURRENT_TIMESTAMP
+            WHERE id = #{id}
+              AND user_id = #{userId}
+              AND status = 2
+            """)
+    int confirmReceiptIfShipped(@Param("id") Long id,
+                                @Param("userId") Long userId,
+                                @Param("finishTime") LocalDateTime finishTime,
+                                @Param("confirmTime") LocalDateTime confirmTime);
 }

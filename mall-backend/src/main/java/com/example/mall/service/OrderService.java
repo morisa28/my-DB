@@ -10,8 +10,11 @@ import com.example.mall.dto.ShipOrderDTO;
 import com.example.mall.entity.OrderInfo;
 import com.example.mall.vo.OrderCreateResultVO;
 import com.example.mall.vo.OrderDetailVO;
+import com.example.mall.vo.OrderOperationLogVO;
 import com.example.mall.vo.OrderVO;
 import com.example.mall.vo.StatisticsVO;
+
+import java.util.List;
 
 public interface OrderService extends IService<OrderInfo> {
     OrderCreateResultVO createOrder(OrderCreateDTO dto);
@@ -29,6 +32,8 @@ public interface OrderService extends IService<OrderInfo> {
     PageResult<OrderVO> pageAdminOrders(OrderQueryDTO query);
 
     OrderDetailVO getAdminOrderDetail(Long id);
+
+    List<OrderOperationLogVO> listAdminOrderLogs(Long id);
 
     void confirmPayment(Long id, AdminPaymentConfirmDTO dto);
 

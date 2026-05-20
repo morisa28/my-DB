@@ -14,9 +14,12 @@ WORKDIR /app
 
 ENV JAVA_OPTS=""
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /workspace/target/mall-backend-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
-

@@ -32,7 +32,8 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus/es/components/message/index.mjs'
+import { ElMessageBox } from 'element-plus/es/components/message-box/index.mjs'
 import { cancelOrder, confirmReceipt, getOrders, submitPaymentNote } from '../../api/order'
 
 const loading = ref(false)

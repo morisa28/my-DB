@@ -8,6 +8,7 @@ import com.example.mall.dto.ShipOrderDTO;
 import com.example.mall.security.RequireAdmin;
 import com.example.mall.service.OrderService;
 import com.example.mall.vo.OrderDetailVO;
+import com.example.mall.vo.OrderOperationLogVO;
 import com.example.mall.vo.OrderVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RequireAdmin
 @RestController
 @RequiredArgsConstructor
@@ -27,13 +30,18 @@ public class AdminOrderController {
     private final OrderService orderService;
 
     @GetMapping
-    public Result<PageResult<OrderVO>> list(OrderQueryDTO query) {
+    public Result<PageResult<OrderVO>> list(@Valid OrderQueryDTO query) {
         return Result.ok(orderService.pageAdminOrders(query));
     }
 
     @GetMapping("/{id}")
     public Result<OrderDetailVO> detail(@PathVariable Long id) {
         return Result.ok(orderService.getAdminOrderDetail(id));
+    }
+
+    @GetMapping("/{id}/logs")
+    public Result<List<OrderOperationLogVO>> logs(@PathVariable Long id) {
+        return Result.ok(orderService.listAdminOrderLogs(id));
     }
 
     @PostMapping("/{id}/confirm-payment")

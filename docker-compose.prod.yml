@@ -1,0 +1,70 @@
+services:
+  mysql:
+    build:
+      context: .
+      dockerfile: mall-mysql/Dockerfile
+    image: mall-platform-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mall_db}
+      MYSQL_USER: ${MYSQL_USER:?MYSQL_USER is required}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
+      TZ: Asia/Shanghai
+    command:
+      - --default-time-zone=+08:00
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    volumes:
+      - mall-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  backend:
+    build:
+      context: ./mall-backend
+    image: mall-platform-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: "jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-mall_db}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
+      DB_USERNAME: "${MYSQL_USER:?MYSQL_USER is required}"
+      DB_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET is required}"
+      JWT_EXPIRATION_MINUTES: "${JWT_EXPIRATION_MINUTES:-10080}"
+      UPLOAD_DIR: "${UPLOAD_DIR:-/app/uploads}"
+      UPLOAD_BASE_URL: "${UPLOAD_BASE_URL:-/uploads}"
+      UPLOAD_MAX_FILE_SIZE: "${UPLOAD_MAX_FILE_SIZE:-2MB}"
+      UPLOAD_MAX_REQUEST_SIZE: "${UPLOAD_MAX_REQUEST_SIZE:-3MB}"
+      UPLOAD_MAX_SIZE_BYTES: "${UPLOAD_MAX_SIZE_BYTES:-2097152}"
+      CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required}"
+      TZ: "Asia/Shanghai"
+    volumes:
+      - mall-upload-data:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/api/ready >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./mall-frontend
+    image: mall-platform-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-8088}:80"
+
+volumes:
+  mall-mysql-data:
+  mall-upload-data:

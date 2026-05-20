@@ -7,6 +7,7 @@ import com.example.mall.entity.Category;
 import com.example.mall.entity.Product;
 import com.example.mall.exception.BusinessException;
 import com.example.mall.mapper.CategoryMapper;
+import com.example.mall.service.AdminOperationLogService;
 import com.example.mall.service.CategoryService;
 import com.example.mall.service.ProductService;
 import com.example.mall.utils.CopyUtils;
@@ -20,7 +21,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService {
+    private static final String MODULE_CATEGORY = "CATEGORY";
+
     private final ProductService productService;
+    private final AdminOperationLogService adminOperationLogService;
 
     @Override
     public List<CategoryVO> listCategories(boolean admin) {
@@ -39,6 +43,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         category.setSortOrder(dto.getSortOrder());
         category.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
         save(category);
+        adminOperationLogService.record(MODULE_CATEGORY, "CREATE_CATEGORY", category.getId(), category.getName(), "创建分类");
         return CopyUtils.copy(category, CategoryVO.class);
     }
 
@@ -53,6 +58,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         category.setSortOrder(dto.getSortOrder());
         category.setStatus(dto.getStatus() == null ? category.getStatus() : dto.getStatus());
         updateById(category);
+        adminOperationLogService.record(MODULE_CATEGORY, "UPDATE_CATEGORY", category.getId(), category.getName(), "更新分类");
         return CopyUtils.copy(category, CategoryVO.class);
     }
 
@@ -67,9 +73,10 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         if (productCount > 0) {
             category.setStatus(0);
             updateById(category);
+            adminOperationLogService.record(MODULE_CATEGORY, "DISABLE_CATEGORY", category.getId(), category.getName(), "分类存在商品，改为停用");
         } else {
             removeById(id);
+            adminOperationLogService.record(MODULE_CATEGORY, "DELETE_CATEGORY", category.getId(), category.getName(), "删除空分类");
         }
     }
 }
-

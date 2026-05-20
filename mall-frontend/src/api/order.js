@@ -9,6 +9,7 @@ export const confirmReceipt = (id) => request.put(`/orders/${id}/confirm-receipt
 
 export const getAdminOrders = (params) => request.get('/admin/orders', { params })
 export const getAdminOrderDetail = (id) => request.get(`/admin/orders/${id}`)
+export const getAdminOrderLogs = (id) => request.get(`/admin/orders/${id}/logs`)
 export const confirmPayment = (id, data) => request.post(`/admin/orders/${id}/confirm-payment`, data)
 export const shipOrder = (id, data) => request.put(`/admin/orders/${id}/ship`, data)
 export const getStatistics = () => request.get('/admin/statistics')

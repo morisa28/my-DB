@@ -221,6 +221,7 @@ docs/backup-and-restore.md
 - `22-阶段十五-支付单与回调日志预留.md`
 - `23-阶段十六-退款售后模型预留.md`
 - `24-阶段十七-备份恢复脚本.md`
+- `25-阶段十八-CI脚本检查加固.md`
 - `backup-and-restore.md`
 - `deploy-demo.md`
 - `demo-script.md`

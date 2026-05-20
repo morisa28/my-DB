@@ -41,3 +41,14 @@ jobs:
         run: docker compose config --quiet
       - name: Production compose config check
         run: docker compose -f docker-compose.prod.yml --env-file .env.prod.example config --quiet
+
+  script-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Backup and restore script syntax check
+        run: |
+          bash -n scripts/lib/env.sh
+          bash -n scripts/backup-db.sh
+          bash -n scripts/backup-uploads.sh
+          bash -n scripts/restore-db.sh

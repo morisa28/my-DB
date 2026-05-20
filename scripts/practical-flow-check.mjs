@@ -91,11 +91,17 @@ let cart = (await request('GET', '/cart', null, userToken)).body.data
 let cartItem = cart.find((item) => item.productId === 3)
 const order = await request('POST', '/orders', { addressId, cartItemIds: [cartItem.id] }, userToken)
 const orderId = order.body.data.orderId
+const duplicateOrder = await request('POST', '/orders', { addressId, cartItemIds: [cartItem.id] }, userToken, false)
+assert(duplicateOrder.http === 400, '重复结算同一购物车项应返回 400')
 
 await request('PUT', `/orders/${orderId}/payment-note`, { paymentNote: '上线前验收付款备注' }, userToken)
 await request('POST', `/admin/orders/${orderId}/confirm-payment`, { adminRemark: '上线前验收已收款' }, adminToken)
+const latePaymentNote = await request('PUT', `/orders/${orderId}/payment-note`, { paymentNote: '迟到备注' }, userToken, false)
+assert(latePaymentNote.http === 400, '确认收款后继续提交付款备注应返回 400')
 await request('PUT', `/admin/orders/${orderId}/ship`, { shippingNo: `CHECK${Date.now()}` }, adminToken)
 await request('PUT', `/orders/${orderId}/confirm-receipt`, null, userToken)
+const duplicateReceipt = await request('PUT', `/orders/${orderId}/confirm-receipt`, null, userToken, false)
+assert(duplicateReceipt.http === 400, '重复确认收货应返回 400')
 const finished = (await request('GET', `/orders/${orderId}`, null, userToken)).body.data
 assert(finished.status === 3 && finished.confirmTime, '订单确认收货失败')
 
@@ -106,6 +112,8 @@ cartItem = cart.find((item) => item.productId === 4)
 const cancelOrder = await request('POST', '/orders', { addressId, cartItemIds: [cartItem.id] }, userToken)
 const cancelOrderId = cancelOrder.body.data.orderId
 await request('PUT', `/orders/${cancelOrderId}/cancel`, null, userToken)
+const duplicateCancel = await request('PUT', `/orders/${cancelOrderId}/cancel`, null, userToken, false)
+assert(duplicateCancel.http === 400, '重复取消订单应返回 400')
 const canceled = (await request('GET', `/orders/${cancelOrderId}`, null, userToken)).body.data
 const productAfter = (await request('GET', '/products/4')).body.data
 assert(canceled.status === 4 && canceled.cancelTime, '取消订单状态异常')

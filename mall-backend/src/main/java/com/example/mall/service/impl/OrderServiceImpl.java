@@ -50,8 +50,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
     private static final int STATUS_WAITING_PAYMENT = 0;
     private static final int STATUS_WAITING_SHIPMENT = 1;
     private static final int STATUS_SHIPPED = 2;
-    private static final int STATUS_FINISHED = 3;
-    private static final int STATUS_CANCELED = 4;
 
     private final AddressMapper addressMapper;
     private final CartItemMapper cartItemMapper;
@@ -110,6 +108,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         order.setReceiverName(address.getReceiverName());
         order.setReceiverPhone(address.getReceiverPhone());
         order.setReceiverAddress(formatAddress(address));
+
+        int claimedRows = cartItemMapper.delete(new LambdaQueryWrapper<CartItem>()
+                .eq(CartItem::getUserId, userId)
+                .in(CartItem::getId, dto.getCartItemIds()));
+        if (claimedRows != dto.getCartItemIds().size()) {
+            throw new BusinessException("购物车数据已被结算，请刷新后重试");
+        }
+
         save(order);
 
         // 数据库课程展示重点：订单主表、明细快照、库存扣减、购物车清理必须同一事务提交或回滚。
@@ -121,10 +127,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
                 throw new BusinessException("库存扣减失败：" + item.getProductName());
             }
         }
-
-        cartItemMapper.delete(new LambdaQueryWrapper<CartItem>()
-                .eq(CartItem::getUserId, userId)
-                .in(CartItem::getId, dto.getCartItemIds()));
 
         return new OrderCreateResultVO(order.getId(), order.getOrderNo(), order.getTotalAmount());
     }
@@ -151,8 +153,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         if (!Integer.valueOf(STATUS_WAITING_PAYMENT).equals(order.getStatus())) {
             throw new BusinessException("只有待支付订单可以提交付款备注");
         }
-        order.setPaymentNote(normalizeText(dto == null ? null : dto.getPaymentNote()));
-        updateById(order);
+        int affectedRows = baseMapper.updatePaymentNoteIfWaiting(
+                id,
+                UserContext.userId(),
+                normalizeText(dto == null ? null : dto.getPaymentNote())
+        );
+        if (affectedRows == 0) {
+            throw new BusinessException("订单状态已变化，请刷新后重试");
+        }
     }
 
     @Override
@@ -162,10 +170,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         if (!Integer.valueOf(STATUS_WAITING_PAYMENT).equals(order.getStatus())) {
             throw new BusinessException("只有待支付订单可以确认收款");
         }
-        order.setStatus(STATUS_WAITING_SHIPMENT);
-        order.setPayTime(LocalDateTime.now());
-        updateAdminRemark(order, dto == null ? null : dto.getAdminRemark());
-        updateById(order);
+        String adminRemark = mergeAdminRemark(order, dto == null ? null : dto.getAdminRemark());
+        int affectedRows = baseMapper.confirmPaymentIfWaiting(id, LocalDateTime.now(), adminRemark);
+        if (affectedRows == 0) {
+            throw new BusinessException("订单状态已变化，请刷新后重试");
+        }
     }
 
     @Override
@@ -175,10 +184,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         if (!Integer.valueOf(STATUS_WAITING_PAYMENT).equals(order.getStatus())) {
             throw new BusinessException("只有待支付订单可以取消");
         }
+        int affectedRows = baseMapper.cancelIfWaitingPayment(order.getId(), UserContext.userId(), LocalDateTime.now());
+        if (affectedRows == 0) {
+            throw new BusinessException("订单状态已变化，请刷新后重试");
+        }
         restoreStockAndSales(order.getId());
-        order.setStatus(STATUS_CANCELED);
-        order.setCancelTime(LocalDateTime.now());
-        updateById(order);
     }
 
     @Override
@@ -189,10 +199,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
             throw new BusinessException("只有已发货订单可以确认收货");
         }
         LocalDateTime now = LocalDateTime.now();
-        order.setStatus(STATUS_FINISHED);
-        order.setFinishTime(now);
-        order.setConfirmTime(now);
-        updateById(order);
+        int affectedRows = baseMapper.confirmReceiptIfShipped(order.getId(), UserContext.userId(), now, now);
+        if (affectedRows == 0) {
+            throw new BusinessException("订单状态已变化，请刷新后重试");
+        }
     }
 
     @Override
@@ -222,11 +232,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         if (shippingNo == null && adminRemark == null) {
             throw new BusinessException("请填写物流单号或发货备注");
         }
-        order.setStatus(STATUS_SHIPPED);
-        order.setShippingNo(shippingNo);
-        updateAdminRemark(order, adminRemark);
-        order.setShipTime(LocalDateTime.now());
-        updateById(order);
+        int affectedRows = baseMapper.shipIfWaitingShipment(
+                id,
+                shippingNo,
+                mergeAdminRemark(order, adminRemark),
+                LocalDateTime.now()
+        );
+        if (affectedRows == 0) {
+            throw new BusinessException("订单状态已变化，请刷新后重试");
+        }
     }
 
     @Override
@@ -302,11 +316,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         }
     }
 
-    private void updateAdminRemark(OrderInfo order, String newRemark) {
+    private String mergeAdminRemark(OrderInfo order, String newRemark) {
         String remark = normalizeText(newRemark);
-        if (remark != null) {
-            order.setAdminRemark(remark);
-        }
+        return remark == null ? order.getAdminRemark() : remark;
     }
 
     private String normalizeText(String value) {

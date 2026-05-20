@@ -167,6 +167,7 @@ node scripts/practical-flow-check.mjs
 - `16-阶段十-服务器部署前交付包.md`
 - `17-整体隐患审查报告.md`
 - `18-阶段十一-第一批隐患修复.md`
+- `19-阶段十二-订单并发幂等修复.md`
 - `deploy-demo.md`
 - `demo-script.md`
 - `database-migration.md`

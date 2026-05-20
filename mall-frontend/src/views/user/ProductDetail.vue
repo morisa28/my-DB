@@ -25,7 +25,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from 'element-plus/es/components/message/index.mjs'
 import { getProductDetail } from '../../api/product'
 import { addCart } from '../../api/cart'
 import { useAuthStore } from '../../store/auth'
@@ -109,4 +109,3 @@ h1 {
   }
 }
 </style>
-

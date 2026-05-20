@@ -104,6 +104,11 @@ const duplicateReceipt = await request('PUT', `/orders/${orderId}/confirm-receip
 assert(duplicateReceipt.http === 400, '重复确认收货应返回 400')
 const finished = (await request('GET', `/orders/${orderId}`, null, userToken)).body.data
 assert(finished.status === 3 && finished.confirmTime, '订单确认收货失败')
+const operationLogs = (await request('GET', `/admin/orders/${orderId}/logs`, null, adminToken)).body.data || []
+const actions = new Set(operationLogs.map((item) => item.action))
+for (const action of ['CREATE_ORDER', 'SUBMIT_PAYMENT_NOTE', 'CONFIRM_PAYMENT', 'SHIP_ORDER', 'CONFIRM_RECEIPT']) {
+  assert(actions.has(action), `订单操作日志缺少 ${action}`)
+}
 
 const productBefore = (await request('GET', '/products/4')).body.data
 await request('POST', '/cart', { productId: 4, quantity: 1 }, userToken)
@@ -118,6 +123,8 @@ const canceled = (await request('GET', `/orders/${cancelOrderId}`, null, userTok
 const productAfter = (await request('GET', '/products/4')).body.data
 assert(canceled.status === 4 && canceled.cancelTime, '取消订单状态异常')
 assert(productAfter.stock === productBefore.stock && productAfter.sales === productBefore.sales, '取消订单未恢复库存或销量')
+const cancelLogs = (await request('GET', `/admin/orders/${cancelOrderId}/logs`, null, adminToken)).body.data || []
+assert(cancelLogs.some((item) => item.action === 'CANCEL_ORDER'), '取消订单未写入操作日志')
 
 await request('PUT', '/admin/users/3/status', { status: 0 }, adminToken)
 const disabledToken = await request('GET', '/cart', null, aliceToken, false)
@@ -136,6 +143,7 @@ console.log(JSON.stringify({
   cancelOrderId,
   imageUrl,
   lowStockCount: lowStock.body.data.records.length,
+  operationLogCount: operationLogs.length,
   userTotalOrders: summary.body.data.totalOrders,
   checks: 'passed'
 }, null, 2))

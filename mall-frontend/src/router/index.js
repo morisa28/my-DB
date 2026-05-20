@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from 'element-plus/es/components/message/index.mjs'
 import { useAuthStore } from '../store/auth'
 
 const routes = [
@@ -58,4 +58,3 @@ router.beforeEach(async (to) => {
 })
 
 export default router
-

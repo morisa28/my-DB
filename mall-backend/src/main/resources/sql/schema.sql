@@ -172,6 +172,64 @@ CREATE TABLE payment_callback_log (
     CONSTRAINT ck_callback_process_result CHECK (process_result IN (0, 1))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付回调日志表';
 
+CREATE TABLE refund_order (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    refund_no VARCHAR(64) NOT NULL,
+    order_id BIGINT NOT NULL,
+    order_no VARCHAR(64) NOT NULL,
+    user_id BIGINT NOT NULL,
+    payment_no VARCHAR(64),
+    apply_type TINYINT NOT NULL DEFAULT 0 COMMENT '0仅退款 1退货退款',
+    refund_amount DECIMAL(10,2) NOT NULL,
+    reason VARCHAR(255),
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '0申请中 1审核通过 2审核拒绝 3退款中 4退款成功 5退款失败 6已取消',
+    refund_channel VARCHAR(32),
+    third_party_refund_no VARCHAR(128),
+    stock_restore_required TINYINT NOT NULL DEFAULT 0 COMMENT '0不需要 1需要恢复库存',
+    stock_restored TINYINT NOT NULL DEFAULT 0 COMMENT '0未恢复 1已恢复',
+    admin_remark VARCHAR(255),
+    apply_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    audit_time DATETIME,
+    refund_time DATETIME,
+    finish_time DATETIME,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_refund_no (refund_no),
+    KEY idx_refund_order_id (order_id),
+    KEY idx_refund_order_no (order_no),
+    KEY idx_refund_user_status (user_id, status),
+    KEY idx_refund_payment_no (payment_no),
+    CONSTRAINT fk_refund_order_order FOREIGN KEY (order_id) REFERENCES order_info(id),
+    CONSTRAINT fk_refund_order_user FOREIGN KEY (user_id) REFERENCES `user`(id),
+    CONSTRAINT fk_refund_order_payment FOREIGN KEY (payment_no) REFERENCES payment_order(payment_no),
+    CONSTRAINT ck_refund_apply_type CHECK (apply_type IN (0, 1)),
+    CONSTRAINT ck_refund_amount CHECK (refund_amount > 0),
+    CONSTRAINT ck_refund_status CHECK (status IN (0, 1, 2, 3, 4, 5, 6)),
+    CONSTRAINT ck_refund_stock_required CHECK (stock_restore_required IN (0, 1)),
+    CONSTRAINT ck_refund_stock_restored CHECK (stock_restored IN (0, 1))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款售后单表';
+
+CREATE TABLE refund_operation_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    refund_id BIGINT NOT NULL,
+    refund_no VARCHAR(64) NOT NULL,
+    operator_id BIGINT,
+    operator_role VARCHAR(32) NOT NULL,
+    from_status TINYINT,
+    to_status TINYINT NOT NULL,
+    action VARCHAR(64) NOT NULL,
+    remark VARCHAR(255),
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_refund_log_refund_id (refund_id),
+    KEY idx_refund_log_refund_no (refund_no),
+    KEY idx_refund_log_operator (operator_id, create_time),
+    CONSTRAINT fk_refund_log_refund FOREIGN KEY (refund_id) REFERENCES refund_order(id),
+    CONSTRAINT fk_refund_log_operator FOREIGN KEY (operator_id) REFERENCES `user`(id),
+    CONSTRAINT ck_refund_log_operator_role CHECK (operator_role IN ('USER', 'ADMIN', 'SYSTEM')),
+    CONSTRAINT ck_refund_log_from_status CHECK (from_status IS NULL OR from_status IN (0, 1, 2, 3, 4, 5, 6)),
+    CONSTRAINT ck_refund_log_to_status CHECK (to_status IN (0, 1, 2, 3, 4, 5, 6))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款售后操作日志表';
+
 CREATE TABLE order_idempotency (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,

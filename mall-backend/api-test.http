@@ -8,6 +8,8 @@
 @cancelOrderCartItemId =
 @cancelOrderId =
 @uploadedImageUrl =
+@orderRequestId = api-order-20260520-001
+@cancelOrderRequestId = api-cancel-20260520-001
 
 ### 0. 前端代理健康检查，演示模式推荐
 GET {{baseUrl}}/health
@@ -122,11 +124,23 @@ Authorization: Bearer {{userToken}}
 Content-Type: application/json
 
 {
+  "requestId": "{{orderRequestId}}",
   "addressId": {{demoAddressId}},
   "cartItemIds": [{{demoCartItemId}}]
 }
 
 > {% client.global.set("createdOrderId", response.body.data.orderId); %}
+
+### 12.1 使用同一 requestId 重复创建订单，预期返回同一订单
+POST {{baseUrl}}/orders
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "requestId": "{{orderRequestId}}",
+  "addressId": {{demoAddressId}},
+  "cartItemIds": [{{demoCartItemId}}]
+}
 
 ### 13. 查询用户订单列表
 GET {{baseUrl}}/orders?page=1&size=10
@@ -203,6 +217,7 @@ Authorization: Bearer {{userToken}}
 Content-Type: application/json
 
 {
+  "requestId": "{{cancelOrderRequestId}}",
   "addressId": {{demoAddressId}},
   "cartItemIds": [{{cancelOrderCartItemId}}]
 }

@@ -55,6 +55,7 @@ const addresses = ref([])
 const cartItems = ref([])
 const addressId = ref(null)
 const submitting = ref(false)
+const requestId = ref(createRequestId())
 const selectedIds = computed(() => String(route.query.ids || '').split(',').filter(Boolean).map(Number))
 const selectedItems = computed(() => cartItems.value.filter((item) => selectedIds.value.includes(item.id)))
 const totalAmount = computed(() => selectedItems.value.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0).toFixed(2))
@@ -68,13 +69,24 @@ async function load() {
 async function submit() {
   submitting.value = true
   try {
-    const order = await createOrder({ addressId: addressId.value, cartItemIds: selectedIds.value })
+    const order = await createOrder({
+      requestId: requestId.value,
+      addressId: addressId.value,
+      cartItemIds: selectedIds.value
+    })
     await cart.refreshCount()
     ElMessage.success('订单创建成功')
     router.push(`/orders/${order.orderId}`)
   } finally {
     submitting.value = false
   }
+}
+
+function createRequestId() {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`
 }
 
 onMounted(load)

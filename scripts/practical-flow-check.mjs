@@ -116,8 +116,18 @@ const addressId = address.body.data.id
 await request('POST', '/cart', { productId: 3, quantity: 1 }, userToken)
 let cart = (await request('GET', '/cart', null, userToken)).body.data
 let cartItem = cart.find((item) => item.productId === 3)
-const order = await request('POST', '/orders', { addressId, cartItemIds: [cartItem.id] }, userToken)
+const orderRequestId = `check-order-${Date.now()}`
+const orderPayload = { requestId: orderRequestId, addressId, cartItemIds: [cartItem.id] }
+const order = await request('POST', '/orders', orderPayload, userToken)
 const orderId = order.body.data.orderId
+const duplicateSameRequest = await request('POST', '/orders', orderPayload, userToken)
+assert(duplicateSameRequest.body.data.orderId === orderId, '同 requestId 重复下单应返回同一订单')
+const duplicateDifferentRequest = await request('POST', '/orders', {
+  requestId: `check-order-retry-${Date.now()}`,
+  addressId,
+  cartItemIds: [cartItem.id]
+}, userToken, false)
+assert(duplicateDifferentRequest.http === 400, '同一购物车项使用新 requestId 重复结算应返回 400')
 
 await request('PUT', `/orders/${orderId}/payment-note`, { paymentNote: '上线前验收付款备注' }, userToken)
 await request('POST', `/admin/orders/${orderId}/confirm-payment`, { adminRemark: '上线前验收已收款' }, adminToken)
@@ -130,7 +140,11 @@ const productBefore = (await request('GET', '/products/4')).body.data
 await request('POST', '/cart', { productId: 4, quantity: 1 }, userToken)
 cart = (await request('GET', '/cart', null, userToken)).body.data
 cartItem = cart.find((item) => item.productId === 4)
-const cancelOrder = await request('POST', '/orders', { addressId, cartItemIds: [cartItem.id] }, userToken)
+const cancelOrder = await request('POST', '/orders', {
+  requestId: `check-cancel-${Date.now()}`,
+  addressId,
+  cartItemIds: [cartItem.id]
+}, userToken)
 const cancelOrderId = cancelOrder.body.data.orderId
 await request('PUT', `/orders/${cancelOrderId}/cancel`, null, userToken)
 const canceled = (await request('GET', `/orders/${cancelOrderId}`, null, userToken)).body.data

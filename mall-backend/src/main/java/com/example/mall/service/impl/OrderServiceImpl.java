@@ -11,6 +11,7 @@ import com.example.mall.dto.PaymentNoteDTO;
 import com.example.mall.dto.ShipOrderDTO;
 import com.example.mall.entity.Address;
 import com.example.mall.entity.CartItem;
+import com.example.mall.entity.OrderIdempotency;
 import com.example.mall.entity.OrderInfo;
 import com.example.mall.entity.OrderItem;
 import com.example.mall.entity.Product;
@@ -18,6 +19,7 @@ import com.example.mall.entity.User;
 import com.example.mall.exception.BusinessException;
 import com.example.mall.mapper.AddressMapper;
 import com.example.mall.mapper.CartItemMapper;
+import com.example.mall.mapper.OrderIdempotencyMapper;
 import com.example.mall.mapper.OrderInfoMapper;
 import com.example.mall.mapper.OrderItemMapper;
 import com.example.mall.mapper.ProductMapper;
@@ -31,6 +33,7 @@ import com.example.mall.vo.OrderVO;
 import com.example.mall.vo.StatisticsVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,17 +55,26 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
     private static final int STATUS_SHIPPED = 2;
     private static final int STATUS_FINISHED = 3;
     private static final int STATUS_CANCELED = 4;
+    private static final int IDEMPOTENCY_PROCESSING = 0;
+    private static final int IDEMPOTENCY_SUCCEEDED = 1;
 
     private final AddressMapper addressMapper;
     private final CartItemMapper cartItemMapper;
     private final ProductMapper productMapper;
     private final OrderItemMapper orderItemMapper;
+    private final OrderIdempotencyMapper orderIdempotencyMapper;
     private final UserMapper userMapper;
 
     @Override
     @Transactional
     public OrderCreateResultVO createOrder(OrderCreateDTO dto) {
         Long userId = UserContext.userId();
+        String requestId = normalizeRequestId(dto.getRequestId());
+        OrderCreateResultVO existingResult = claimIdempotencyOrReturnExisting(userId, requestId);
+        if (existingResult != null) {
+            return existingResult;
+        }
+
         Address address = addressMapper.selectById(dto.getAddressId());
         if (address == null || !userId.equals(address.getUserId())) {
             throw new BusinessException("收货地址不存在");
@@ -110,6 +122,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         order.setReceiverName(address.getReceiverName());
         order.setReceiverPhone(address.getReceiverPhone());
         order.setReceiverAddress(formatAddress(address));
+
+        int claimedRows = cartItemMapper.delete(new LambdaQueryWrapper<CartItem>()
+                .eq(CartItem::getUserId, userId)
+                .in(CartItem::getId, dto.getCartItemIds()));
+        if (claimedRows != dto.getCartItemIds().size()) {
+            throw new BusinessException("购物车数据已被结算，请刷新后重试");
+        }
+
         save(order);
 
         // 数据库课程展示重点：订单主表、明细快照、库存扣减、购物车清理必须同一事务提交或回滚。
@@ -122,11 +142,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
             }
         }
 
-        cartItemMapper.delete(new LambdaQueryWrapper<CartItem>()
-                .eq(CartItem::getUserId, userId)
-                .in(CartItem::getId, dto.getCartItemIds()));
+        int markedRows = orderIdempotencyMapper.markSucceeded(userId, requestId, order.getId());
+        if (markedRows == 0) {
+            throw new BusinessException("订单幂等状态更新失败，请稍后重试");
+        }
 
-        return new OrderCreateResultVO(order.getId(), order.getOrderNo(), order.getTotalAmount());
+        return toOrderCreateResult(order);
     }
 
     @Override
@@ -309,12 +330,42 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         }
     }
 
+    private OrderCreateResultVO claimIdempotencyOrReturnExisting(Long userId, String requestId) {
+        OrderIdempotency idempotency = new OrderIdempotency();
+        idempotency.setUserId(userId);
+        idempotency.setRequestId(requestId);
+        idempotency.setStatus(IDEMPOTENCY_PROCESSING);
+        try {
+            orderIdempotencyMapper.insert(idempotency);
+            return null;
+        } catch (DuplicateKeyException e) {
+            OrderIdempotency existing = orderIdempotencyMapper.selectByUserAndRequestId(userId, requestId);
+            if (existing != null
+                    && Integer.valueOf(IDEMPOTENCY_SUCCEEDED).equals(existing.getStatus())
+                    && existing.getOrderId() != null) {
+                OrderInfo order = getById(existing.getOrderId());
+                if (order != null && Objects.equals(userId, order.getUserId())) {
+                    return toOrderCreateResult(order);
+                }
+            }
+            throw new BusinessException("订单正在处理中，请勿重复提交");
+        }
+    }
+
+    private OrderCreateResultVO toOrderCreateResult(OrderInfo order) {
+        return new OrderCreateResultVO(order.getId(), order.getOrderNo(), order.getTotalAmount());
+    }
+
     private String normalizeText(String value) {
         if (value == null) {
             return null;
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeRequestId(String value) {
+        return value == null ? null : value.trim();
     }
 
     private String formatAddress(Address address) {

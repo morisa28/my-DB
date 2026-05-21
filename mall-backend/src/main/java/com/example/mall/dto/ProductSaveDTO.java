@@ -1,6 +1,7 @@
 package com.example.mall.dto;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,6 +27,8 @@ public class ProductSaveDTO {
 
     private String imageUrl;
     private String description;
+
+    @Min(value = 0, message = "商品状态只能是 0 或 1")
+    @Max(value = 1, message = "商品状态只能是 0 或 1")
     private Integer status = 1;
 }
-

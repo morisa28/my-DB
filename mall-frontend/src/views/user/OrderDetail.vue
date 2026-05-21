@@ -53,7 +53,8 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus/es/components/message/index.mjs'
+import { ElMessageBox } from 'element-plus/es/components/message-box/index.mjs'
 import { cancelOrder, confirmReceipt, getOrderDetail, submitPaymentNote } from '../../api/order'
 
 const route = useRoute()

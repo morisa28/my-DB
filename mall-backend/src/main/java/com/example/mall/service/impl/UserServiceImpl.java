@@ -14,6 +14,7 @@ import com.example.mall.mapper.OrderInfoMapper;
 import com.example.mall.mapper.UserMapper;
 import com.example.mall.security.LoginAttemptLimiter;
 import com.example.mall.security.UserContext;
+import com.example.mall.service.AdminOperationLogService;
 import com.example.mall.service.UserService;
 import com.example.mall.utils.CopyUtils;
 import com.example.mall.utils.JwtUtils;
@@ -31,10 +32,13 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+    private static final String MODULE_USER = "USER";
+
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final OrderInfoMapper orderInfoMapper;
     private final LoginAttemptLimiter loginAttemptLimiter;
+    private final AdminOperationLogService adminOperationLogService;
 
     @Override
     @Transactional
@@ -160,6 +164,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         user.setStatus(status);
         updateById(user);
+        adminOperationLogService.record(MODULE_USER, "UPDATE_USER_STATUS", user.getId(), user.getUsername(), "状态更新为 " + status);
     }
 
     @Override

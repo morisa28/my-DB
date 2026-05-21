@@ -83,7 +83,7 @@ Compose 默认端口：
 本地演示从模板复制：
 
 ```bash
-cp .env.example .env
+cp .env.prod.example .env
 ```
 
 生产部署应使用生产模板：
@@ -95,6 +95,8 @@ cp .env.prod.example .env
 生产部署必须替换所有 `change-me` 占位值：
 
 ```text
+COMPOSE_PROJECT_NAME=mall-platform
+
 MYSQL_ROOT_PASSWORD=替换为强密码
 MYSQL_DATABASE=mall_db
 MYSQL_USER=mall_app
@@ -117,7 +119,11 @@ UPLOAD_MAX_SIZE_BYTES=2097152
 
 - `.env` 已被 `.gitignore` 忽略，不要提交到 Git。
 - 生产 Compose 固定 `SPRING_PROFILES_ACTIVE=prod`，后端使用 `MYSQL_USER` 和 `MYSQL_PASSWORD` 连接数据库。
-- 生产环境后端禁止 root 数据库账号、demo JWT 密钥和 `CORS_ALLOWED_ORIGINS=*`。
+- `COMPOSE_PROJECT_NAME` 用于固定 Compose 网络、容器和数据卷前缀；服务器部署后不要随意修改，否则 Compose 会创建一套新的容器和命名卷。
+- 生产环境推荐使用 `docker-compose.prod.yml`，该文件会强制要求 `MYSQL_ROOT_PASSWORD`、`MYSQL_USER`、`MYSQL_PASSWORD`、`JWT_SECRET`、`CORS_ALLOWED_ORIGINS`。
+- `JWT_SECRET` 不能使用 `.env.example` 中的演示值。
+- 生产环境应用连接数据库禁止使用 root 账号。
+- 生产环境禁止 `CORS_ALLOWED_ORIGINS=*`。
 - 如果外层反代使用 HTTPS，`CORS_ALLOWED_ORIGINS` 应填写 HTTPS 域名。
 - 若存在多个前端域名，用逗号分隔，例如 `https://example.com,https://www.example.com`。
 
@@ -126,7 +132,7 @@ UPLOAD_MAX_SIZE_BYTES=2097152
 当前 Compose 使用命名卷：
 
 ```text
-mall-upload-data:/app/uploads
+mall-platform_mall-upload-data:/app/uploads
 ```
 
 这能保证容器重启或重建后图片不丢失。服务器上线前需要确认：
@@ -158,10 +164,12 @@ mall-backend/src/main/resources/sql/schema.sql
 mall-backend/src/main/resources/sql/data.sql
 ```
 
-本地演示启动：
+当前实现会把初始化 SQL 构建进 `mall-platform-mysql` 镜像，避免 Docker Desktop + WSL 场景下单文件 bind mount 在重启后失效。
+
+启动：
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 docker compose ps
 ```
 
@@ -273,9 +281,10 @@ node scripts/practical-flow-check.mjs
 - [ ] 使用 `docker-compose.prod.yml` 启动，后端 profile 为 `prod`。
 - [ ] `JWT_SECRET` 已替换为强随机密钥。
 - [ ] `MYSQL_ROOT_PASSWORD` 和 `MYSQL_PASSWORD` 已替换为强密码。
-- [ ] `MYSQL_USER` 不是 `root`。
+- [ ] 应用数据库用户不是 root。
 - [ ] `CORS_ALLOWED_ORIGINS` 已设置为正式域名。
 - [ ] 公网未开放 MySQL 端口。
+- [ ] `/api/ready` 已验证数据库可用。
 - [ ] 上传目录卷或绑定挂载已确认可持久化。
 - [ ] 数据库备份命令已测试。
 - [ ] 上传文件备份方式已测试。

@@ -192,7 +192,11 @@ Content-Type: application/json
 PUT {{baseUrl}}/orders/{{createdOrderId}}/confirm-receipt
 Authorization: Bearer {{userToken}}
 
-### 21. 用户再次加入购物车，用于取消待支付订单
+### 21. 管理员查看新订单操作审计日志
+GET {{baseUrl}}/admin/orders/{{createdOrderId}}/logs
+Authorization: Bearer {{adminToken}}
+
+### 22. 用户再次加入购物车，用于取消待支付订单
 POST {{baseUrl}}/cart
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
@@ -202,7 +206,7 @@ Content-Type: application/json
   "quantity": 1
 }
 
-### 22. 查询购物车并记录商品 4 的购物车项 ID
+### 23. 查询购物车并记录商品 4 的购物车项 ID
 GET {{baseUrl}}/cart
 Authorization: Bearer {{userToken}}
 
@@ -213,7 +217,7 @@ Authorization: Bearer {{userToken}}
   }
 %}
 
-### 23. 创建待取消订单
+### 24. 创建待取消订单
 POST {{baseUrl}}/orders
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
@@ -226,16 +230,20 @@ Content-Type: application/json
 
 > {% client.global.set("cancelOrderId", response.body.data.orderId); %}
 
-### 24. 用户取消待支付订单，预期释放库存并回退销量
+### 25. 用户取消待支付订单，预期释放库存并回退销量
 # 数据库观察点：stock_movement 新增 ORDER_CANCEL_RESTORE 流水
 PUT {{baseUrl}}/orders/{{cancelOrderId}}/cancel
 Authorization: Bearer {{userToken}}
 
-### 25. 管理员查看统计数据
+### 26. 管理员查看取消订单操作审计日志
+GET {{baseUrl}}/admin/orders/{{cancelOrderId}}/logs
+Authorization: Bearer {{adminToken}}
+
+### 27. 管理员查看统计数据
 GET {{baseUrl}}/admin/statistics
 Authorization: Bearer {{adminToken}}
 
-### 26. 管理员上传商品图片
+### 28. 管理员上传商品图片
 # 将 sample-product.png 替换为本地真实图片后执行。
 POST {{baseUrl}}/admin/upload/product-image
 Authorization: Bearer {{adminToken}}
@@ -250,7 +258,7 @@ Content-Type: image/png
 
 > {% client.global.set("uploadedImageUrl", response.body.data.url); %}
 
-### 27. 普通用户上传商品图片，预期返回 403
+### 29. 普通用户上传商品图片，预期返回 403
 POST {{baseUrl}}/admin/upload/product-image
 Authorization: Bearer {{userToken}}
 Content-Type: multipart/form-data; boundary=mall-upload-boundary
@@ -262,23 +270,31 @@ Content-Type: image/png
 < ./sample-product.png
 --mall-upload-boundary--
 
-### 28. 管理员查看所有订单状态样例
+### 30. 管理员查看所有订单状态样例
 GET {{baseUrl}}/admin/orders?page=1&size=10
 Authorization: Bearer {{adminToken}}
 
-### 29. 管理员筛选低库存商品
+### 31. 管理员筛选低库存商品
 GET {{baseUrl}}/admin/products?page=1&size=10&lowStock=true
 Authorization: Bearer {{adminToken}}
 
-### 30. 管理员查看用户订单概要
+### 32. 管理员查看用户订单概要
 GET {{baseUrl}}/admin/users/2/order-summary
 Authorization: Bearer {{adminToken}}
 
-### 31. 普通用户访问后台，预期返回 403
+### 33. 管理员查看后台操作日志
+GET {{baseUrl}}/admin/operation-logs?page=1&size=10
+Authorization: Bearer {{adminToken}}
+
+### 34. 管理员按用户模块筛选后台操作日志
+GET {{baseUrl}}/admin/operation-logs?page=1&size=10&module=USER&action=UPDATE_USER_STATUS
+Authorization: Bearer {{adminToken}}
+
+### 35. 普通用户访问后台，预期返回 403
 GET {{baseUrl}}/admin/statistics
 Authorization: Bearer {{userToken}}
 
-### 32. 超库存加入购物车，预期失败
+### 36. 超库存加入购物车，预期失败
 POST {{baseUrl}}/cart
 Authorization: Bearer {{userToken}}
 Content-Type: application/json

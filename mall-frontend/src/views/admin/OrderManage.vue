@@ -48,6 +48,22 @@
           <el-table-column prop="quantity" label="数量" width="80" />
           <el-table-column prop="totalPrice" label="小计" width="110" />
         </el-table>
+        <div class="audit-block">
+          <h2>操作记录</h2>
+          <el-timeline v-if="operationLogs.length">
+            <el-timeline-item v-for="log in operationLogs" :key="log.id" :timestamp="log.createTime">
+              <div class="log-title">{{ actionText(log.action) }}</div>
+              <div class="log-meta">
+                {{ log.operatorUsername }} · {{ roleText(log.operatorRole) }}
+                <span v-if="log.fromStatus !== null || log.toStatus !== null">
+                  · {{ statusFlowText(log.fromStatus) }} -> {{ statusFlowText(log.toStatus) }}
+                </span>
+              </div>
+              <div v-if="log.remark" class="log-remark">{{ log.remark }}</div>
+            </el-timeline-item>
+          </el-timeline>
+          <el-empty v-else description="暂无操作记录" :image-size="72" />
+        </div>
       </template>
     </el-drawer>
   </div>
@@ -55,13 +71,15 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { confirmPayment, getAdminOrderDetail, getAdminOrders, shipOrder } from '../../api/order'
+import { ElMessage } from 'element-plus/es/components/message/index.mjs'
+import { ElMessageBox } from 'element-plus/es/components/message-box/index.mjs'
+import { confirmPayment, getAdminOrderDetail, getAdminOrderLogs, getAdminOrders, shipOrder } from '../../api/order'
 
 const loading = ref(false)
 const orders = ref([])
 const total = ref(0)
 const detail = ref(null)
+const operationLogs = ref([])
 const drawerVisible = ref(false)
 const query = reactive({ page: 1, size: 10, status: null })
 const statusOptions = [
@@ -72,7 +90,18 @@ const statusOptions = [
   { label: '已取消', value: 4 }
 ]
 const statusText = (status) => statusOptions.find((item) => item.value === status)?.label || '未知'
+const statusFlowText = (status) => (status === null || status === undefined ? '-' : statusText(status))
 const statusType = (status) => ['warning', 'primary', 'success', 'success', 'info'][status] || 'info'
+const actionLabels = {
+  CREATE_ORDER: '创建订单',
+  SUBMIT_PAYMENT_NOTE: '提交付款备注',
+  CONFIRM_PAYMENT: '确认收款',
+  SHIP_ORDER: '订单发货',
+  CANCEL_ORDER: '取消订单',
+  CONFIRM_RECEIPT: '确认收货'
+}
+const actionText = (action) => actionLabels[action] || action
+const roleText = (role) => (role === 1 ? '管理员' : '用户')
 
 async function load() {
   loading.value = true
@@ -86,7 +115,12 @@ async function load() {
 }
 
 async function openDetail(id) {
-  detail.value = await getAdminOrderDetail(id)
+  const [orderDetail, logs] = await Promise.all([
+    getAdminOrderDetail(id),
+    getAdminOrderLogs(id)
+  ])
+  detail.value = orderDetail
+  operationLogs.value = logs || []
   drawerVisible.value = true
 }
 
@@ -126,5 +160,26 @@ onMounted(load)
 .pager {
   display: flex;
   justify-content: center;
+}
+
+.audit-block {
+  margin-top: 22px;
+}
+
+.audit-block h2 {
+  margin: 0 0 14px;
+  font-size: 16px;
+}
+
+.log-title {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.log-meta,
+.log-remark {
+  margin-top: 4px;
+  color: #6b7280;
+  line-height: 1.5;
 }
 </style>

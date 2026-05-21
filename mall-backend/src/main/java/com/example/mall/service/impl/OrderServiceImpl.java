@@ -14,6 +14,7 @@ import com.example.mall.entity.CartItem;
 import com.example.mall.entity.OrderIdempotency;
 import com.example.mall.entity.OrderInfo;
 import com.example.mall.entity.OrderItem;
+import com.example.mall.entity.OrderOperationLog;
 import com.example.mall.entity.PaymentOrder;
 import com.example.mall.entity.Product;
 import com.example.mall.entity.StockMovement;
@@ -24,15 +25,18 @@ import com.example.mall.mapper.CartItemMapper;
 import com.example.mall.mapper.OrderIdempotencyMapper;
 import com.example.mall.mapper.OrderInfoMapper;
 import com.example.mall.mapper.OrderItemMapper;
+import com.example.mall.mapper.OrderOperationLogMapper;
 import com.example.mall.mapper.PaymentOrderMapper;
 import com.example.mall.mapper.ProductMapper;
 import com.example.mall.mapper.StockMovementMapper;
 import com.example.mall.mapper.UserMapper;
+import com.example.mall.security.LoginUser;
 import com.example.mall.security.UserContext;
 import com.example.mall.service.OrderService;
 import com.example.mall.vo.OrderCreateResultVO;
 import com.example.mall.vo.OrderDetailVO;
 import com.example.mall.vo.OrderItemVO;
+import com.example.mall.vo.OrderOperationLogVO;
 import com.example.mall.vo.OrderVO;
 import com.example.mall.vo.StatisticsVO;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +70,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
     private static final String PAYMENT_CHANNEL_OFFLINE = "OFFLINE";
     private static final int PAYMENT_STATUS_SUCCESS = 1;
 
+    private static final String ACTION_CREATE_ORDER = "CREATE_ORDER";
+    private static final String ACTION_SUBMIT_PAYMENT_NOTE = "SUBMIT_PAYMENT_NOTE";
+    private static final String ACTION_CONFIRM_PAYMENT = "CONFIRM_PAYMENT";
+    private static final String ACTION_SHIP_ORDER = "SHIP_ORDER";
+    private static final String ACTION_CANCEL_ORDER = "CANCEL_ORDER";
+    private static final String ACTION_CONFIRM_RECEIPT = "CONFIRM_RECEIPT";
+
     private final AddressMapper addressMapper;
     private final CartItemMapper cartItemMapper;
     private final ProductMapper productMapper;
@@ -73,6 +84,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
     private final OrderIdempotencyMapper orderIdempotencyMapper;
     private final PaymentOrderMapper paymentOrderMapper;
     private final StockMovementMapper stockMovementMapper;
+    private final OrderOperationLogMapper orderOperationLogMapper;
     private final UserMapper userMapper;
 
     @Override
@@ -169,6 +181,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
             throw new BusinessException("订单幂等状态更新失败，请稍后重试");
         }
 
+        recordOrderOperation(order, ACTION_CREATE_ORDER, null, STATUS_WAITING_PAYMENT, "用户创建订单");
         return toOrderCreateResult(order);
     }
 
@@ -194,8 +207,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         if (!Integer.valueOf(STATUS_WAITING_PAYMENT).equals(order.getStatus())) {
             throw new BusinessException("只有待支付订单可以提交付款备注");
         }
-        order.setPaymentNote(normalizeText(dto == null ? null : dto.getPaymentNote()));
-        updateById(order);
+        int affectedRows = baseMapper.updatePaymentNoteIfWaiting(
+                id,
+                UserContext.userId(),
+                normalizeText(dto == null ? null : dto.getPaymentNote())
+        );
+        if (affectedRows == 0) {
+            throw new BusinessException("订单状态已变化，请刷新后重试");
+        }
+        recordOrderOperation(order, ACTION_SUBMIT_PAYMENT_NOTE, STATUS_WAITING_PAYMENT, STATUS_WAITING_PAYMENT, "用户提交付款备注");
     }
 
     @Override
@@ -206,11 +226,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
             throw new BusinessException("只有待支付订单可以确认收款");
         }
         LocalDateTime payTime = LocalDateTime.now();
-        order.setStatus(STATUS_WAITING_SHIPMENT);
-        order.setPayTime(payTime);
-        updateAdminRemark(order, dto == null ? null : dto.getAdminRemark());
-        updateById(order);
+        String adminRemark = mergeAdminRemark(order, dto == null ? null : dto.getAdminRemark());
+        int affectedRows = baseMapper.confirmPaymentIfWaiting(id, payTime, adminRemark);
+        if (affectedRows == 0) {
+            throw new BusinessException("订单状态已变化，请刷新后重试");
+        }
         recordOfflinePaymentOrder(order, payTime);
+        recordOrderOperation(order, ACTION_CONFIRM_PAYMENT, STATUS_WAITING_PAYMENT, STATUS_WAITING_SHIPMENT, normalizeText(dto == null ? null : dto.getAdminRemark()));
     }
 
     @Override
@@ -220,10 +242,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         if (!Integer.valueOf(STATUS_WAITING_PAYMENT).equals(order.getStatus())) {
             throw new BusinessException("只有待支付订单可以取消");
         }
+        int affectedRows = baseMapper.cancelIfWaitingPayment(order.getId(), UserContext.userId(), LocalDateTime.now());
+        if (affectedRows == 0) {
+            throw new BusinessException("订单状态已变化，请刷新后重试");
+        }
         restoreStockAndSales(order.getId());
-        order.setStatus(STATUS_CANCELED);
-        order.setCancelTime(LocalDateTime.now());
-        updateById(order);
+        recordOrderOperation(order, ACTION_CANCEL_ORDER, STATUS_WAITING_PAYMENT, STATUS_CANCELED, "用户取消待支付订单");
     }
 
     @Override
@@ -234,10 +258,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
             throw new BusinessException("只有已发货订单可以确认收货");
         }
         LocalDateTime now = LocalDateTime.now();
-        order.setStatus(STATUS_FINISHED);
-        order.setFinishTime(now);
-        order.setConfirmTime(now);
-        updateById(order);
+        int affectedRows = baseMapper.confirmReceiptIfShipped(order.getId(), UserContext.userId(), now, now);
+        if (affectedRows == 0) {
+            throw new BusinessException("订单状态已变化，请刷新后重试");
+        }
+        recordOrderOperation(order, ACTION_CONFIRM_RECEIPT, STATUS_SHIPPED, STATUS_FINISHED, "用户确认收货");
     }
 
     @Override
@@ -256,6 +281,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
     }
 
     @Override
+    public List<OrderOperationLogVO> listAdminOrderLogs(Long id) {
+        if (getById(id) == null) {
+            throw new BusinessException("订单不存在");
+        }
+        return orderOperationLogMapper.selectByOrderId(id).stream()
+                .map(this::toOrderOperationLogVO)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public void shipOrder(Long id, ShipOrderDTO dto) {
         OrderInfo order = getExistingOrder(id);
@@ -267,11 +302,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         if (shippingNo == null && adminRemark == null) {
             throw new BusinessException("请填写物流单号或发货备注");
         }
-        order.setStatus(STATUS_SHIPPED);
-        order.setShippingNo(shippingNo);
-        updateAdminRemark(order, adminRemark);
-        order.setShipTime(LocalDateTime.now());
-        updateById(order);
+        int affectedRows = baseMapper.shipIfWaitingShipment(
+                id,
+                shippingNo,
+                mergeAdminRemark(order, adminRemark),
+                LocalDateTime.now()
+        );
+        if (affectedRows == 0) {
+            throw new BusinessException("订单状态已变化，请刷新后重试");
+        }
+        recordOrderOperation(order, ACTION_SHIP_ORDER, STATUS_WAITING_SHIPMENT, STATUS_SHIPPED, buildShipRemark(shippingNo, adminRemark));
     }
 
     @Override
@@ -320,6 +360,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         return detail;
     }
 
+    private OrderOperationLogVO toOrderOperationLogVO(OrderOperationLog log) {
+        OrderOperationLogVO vo = new OrderOperationLogVO();
+        BeanUtils.copyProperties(log, vo);
+        return vo;
+    }
+
     private OrderInfo getExistingOrder(Long id) {
         OrderInfo order = getById(id);
         if (order == null) {
@@ -360,11 +406,34 @@ public class OrderServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> im
         }
     }
 
-    private void updateAdminRemark(OrderInfo order, String newRemark) {
+    private String mergeAdminRemark(OrderInfo order, String newRemark) {
         String remark = normalizeText(newRemark);
-        if (remark != null) {
-            order.setAdminRemark(remark);
+        return remark == null ? order.getAdminRemark() : remark;
+    }
+
+    private String buildShipRemark(String shippingNo, String adminRemark) {
+        if (shippingNo != null && adminRemark != null) {
+            return "物流单号：" + shippingNo + "；备注：" + adminRemark;
         }
+        if (shippingNo != null) {
+            return "物流单号：" + shippingNo;
+        }
+        return adminRemark;
+    }
+
+    private void recordOrderOperation(OrderInfo order, String action, Integer fromStatus, Integer toStatus, String remark) {
+        LoginUser operator = UserContext.get();
+        OrderOperationLog log = new OrderOperationLog();
+        log.setOrderId(order.getId());
+        log.setOrderNo(order.getOrderNo());
+        log.setOperatorId(operator.getId());
+        log.setOperatorUsername(operator.getUsername());
+        log.setOperatorRole(operator.getRole());
+        log.setAction(action);
+        log.setFromStatus(fromStatus);
+        log.setToStatus(toStatus);
+        log.setRemark(normalizeText(remark));
+        orderOperationLogMapper.insert(log);
     }
 
     private OrderCreateResultVO claimIdempotencyOrReturnExisting(Long userId, String requestId) {

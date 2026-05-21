@@ -4,7 +4,6 @@ services:
       context: .
       dockerfile: mall-mysql/Dockerfile
     image: mall-platform-mysql
-    container_name: mall-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-mall_demo_root_2026}
@@ -27,7 +26,6 @@ services:
   backend:
     build:
       context: ./mall-backend
-    container_name: mall-backend
     restart: unless-stopped
     depends_on:
       mysql:
@@ -45,6 +43,7 @@ services:
       UPLOAD_MAX_REQUEST_SIZE: "${UPLOAD_MAX_REQUEST_SIZE:-3MB}"
       UPLOAD_MAX_SIZE_BYTES: "${UPLOAD_MAX_SIZE_BYTES:-2097152}"
       CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-*}"
+      MYBATIS_LOG_IMPL: "${MYBATIS_LOG_IMPL:-org.apache.ibatis.logging.nologging.NoLoggingImpl}"
       TZ: "Asia/Shanghai"
     ports:
       - "${BACKEND_PORT:-8080}:8080"
@@ -60,7 +59,6 @@ services:
   frontend:
     build:
       context: ./mall-frontend
-    container_name: mall-frontend
     restart: unless-stopped
     depends_on:
       backend:

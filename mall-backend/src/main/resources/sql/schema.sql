@@ -4,6 +4,15 @@ DROP DATABASE IF EXISTS mall_db;
 CREATE DATABASE mall_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 USE mall_db;
 
+CREATE TABLE schema_migration_history (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    version VARCHAR(64) NOT NULL,
+    description VARCHAR(200) NOT NULL,
+    script_name VARCHAR(200) NOT NULL,
+    executed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_schema_migration_version (version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据库增量脚本执行记录表';
+
 CREATE TABLE `user` (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) NOT NULL,
@@ -263,3 +272,41 @@ CREATE TABLE order_item (
     CONSTRAINT ck_order_item_quantity CHECK (quantity > 0),
     CONSTRAINT ck_order_item_total CHECK (total_price >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单明细表';
+
+CREATE TABLE order_operation_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id BIGINT NOT NULL,
+    order_no VARCHAR(64) NOT NULL,
+    operator_id BIGINT NOT NULL,
+    operator_username VARCHAR(50) NOT NULL,
+    operator_role TINYINT NOT NULL COMMENT '0 普通用户，1 管理员',
+    action VARCHAR(50) NOT NULL,
+    from_status TINYINT,
+    to_status TINYINT,
+    remark VARCHAR(255),
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_order_operation_order (order_id, create_time),
+    KEY idx_order_operation_operator (operator_id, create_time),
+    KEY idx_order_operation_action (action),
+    CONSTRAINT fk_order_operation_order FOREIGN KEY (order_id) REFERENCES order_info(id),
+    CONSTRAINT fk_order_operation_user FOREIGN KEY (operator_id) REFERENCES `user`(id),
+    CONSTRAINT ck_order_operation_role CHECK (operator_role IN (0, 1)),
+    CONSTRAINT ck_order_operation_from_status CHECK (from_status IS NULL OR from_status IN (0, 1, 2, 3, 4)),
+    CONSTRAINT ck_order_operation_to_status CHECK (to_status IS NULL OR to_status IN (0, 1, 2, 3, 4))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单操作审计日志表';
+
+CREATE TABLE admin_operation_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    operator_id BIGINT NOT NULL,
+    operator_username VARCHAR(50) NOT NULL,
+    module VARCHAR(50) NOT NULL,
+    action VARCHAR(50) NOT NULL,
+    target_id BIGINT,
+    target_name VARCHAR(100),
+    remark VARCHAR(255),
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_admin_operation_time (create_time),
+    KEY idx_admin_operation_operator (operator_id, create_time),
+    KEY idx_admin_operation_module_action (module, action, create_time),
+    CONSTRAINT fk_admin_operation_user FOREIGN KEY (operator_id) REFERENCES `user`(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='后台管理操作审计日志表';

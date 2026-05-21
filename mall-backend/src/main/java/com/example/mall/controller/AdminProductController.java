@@ -28,7 +28,7 @@ public class AdminProductController {
     private final ProductService productService;
 
     @GetMapping
-    public Result<PageResult<ProductVO>> page(ProductQueryDTO query) {
+    public Result<PageResult<ProductVO>> page(@Valid ProductQueryDTO query) {
         return Result.ok(productService.pageProducts(query, true));
     }
 
@@ -65,4 +65,3 @@ public class AdminProductController {
         return Result.ok();
     }
 }
-

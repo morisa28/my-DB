@@ -5,6 +5,7 @@ import com.example.mall.common.Result;
 import com.example.mall.dto.ProductQueryDTO;
 import com.example.mall.service.ProductService;
 import com.example.mall.vo.ProductVO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,12 +19,12 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public Result<PageResult<ProductVO>> page(ProductQueryDTO query) {
+    public Result<PageResult<ProductVO>> page(@Valid ProductQueryDTO query) {
         return Result.ok(productService.pageProducts(query, false));
     }
 
     @GetMapping("/search")
-    public Result<PageResult<ProductVO>> search(ProductQueryDTO query) {
+    public Result<PageResult<ProductVO>> search(@Valid ProductQueryDTO query) {
         return Result.ok(productService.pageProducts(query, false));
     }
 
@@ -32,4 +33,3 @@ public class ProductController {
         return Result.ok(productService.getProductDetail(id, false));
     }
 }
-

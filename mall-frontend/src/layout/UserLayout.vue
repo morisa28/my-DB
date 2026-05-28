@@ -4,7 +4,7 @@
       <div class="page topbar-inner">
         <router-link class="brand" to="/">
           <el-icon><ShoppingBag /></el-icon>
-          <span>校园优选商城</span>
+          <span>日常优选商城</span>
         </router-link>
         <nav class="nav">
           <router-link to="/">首页</router-link>

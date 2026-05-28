@@ -2,8 +2,8 @@
   <div class="page home-page">
     <section class="hero panel">
       <div>
-        <h1>校园优选商城</h1>
-        <p>围绕数据库课程大作业设计的可演示商城，覆盖商品、购物车、订单事务和后台统计。</p>
+        <h1>日常优选商城</h1>
+        <p>覆盖数码家电、家居日用等日常消费场景，完整演示商品、购物车、订单事务和后台统计。</p>
       </div>
       <el-button type="primary" size="large" @click="$router.push('/cart')">查看购物车</el-button>
     </section>
@@ -157,4 +157,3 @@ onMounted(() => {
   }
 }
 </style>
-
